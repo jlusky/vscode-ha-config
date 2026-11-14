@@ -2774,11 +2774,11 @@ export class HomeAssistantLanguageService {
       }
       for (const key in properties) {
         if (
+          // The old RegExp here built `\s`/`\w` inside a template string, which
+          // collapses them to `s`/`w`; with every trailing group optional it only
+          // ever checked for "<propertyName>:" on the line, so test for that directly.
           properties[key].some((propertyName) =>
-            // eslint-disable-next-line no-useless-escape
-            new RegExp(`(.*)${propertyName}(:)([\s]*)([\w]*)(\s*)`).test(
-              thisLine,
-            ),
+            thisLine.includes(`${propertyName}:`),
           )
         ) {
           return key;

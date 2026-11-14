@@ -3,12 +3,16 @@ name: Language Sevice
 on:
   push:
     paths:
-      - "src/language-service/*"
-      - ".github/*"
+      - "src/language-service/**"
+      - ".github/**"
   pull_request:
     paths:
-      - "src/language-service/*"
-      - ".github/*"
+      - "src/language-service/**"
+      - ".github/**"
+
+# Publishing uses NPM_TOKEN; GITHUB_TOKEN only needs to read the repo
+permissions:
+  contents: read
 
 jobs:
   language-service:
