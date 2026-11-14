@@ -710,6 +710,9 @@
   "lint-staged": {
     "*.ts": [
       "eslint --fix"
+    ],
+    "src/**/*.json": [
+      "prettier --write"
     ]
   },
   "scripts": {
