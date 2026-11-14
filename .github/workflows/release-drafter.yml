@@ -6,6 +6,12 @@ on:
     branches:
       - dev
 
+permissions:
+  # Create and update the draft release
+  contents: write
+  # Read merged pull requests to build the release notes
+  pull-requests: read
+
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest

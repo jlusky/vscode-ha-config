@@ -175,8 +175,10 @@ export function createSocket(
     }) => {
       const message = JSON.parse(event.data);
 
+      // Keep the server-provided type out of the format string so stray `%` codes aren't interpreted
       console.log(
-        `[Auth phase] Received a message of type ${message.type}`,
+        "[Auth phase] Received a message of type %s",
+        message.type,
         message,
       );
 

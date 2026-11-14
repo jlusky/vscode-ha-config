@@ -2,6 +2,10 @@ name: VS Code Extension
 
 on: [push, pull_request]
 
+# Publishing uses VSCE_TOKEN / OPEN_VSX_TOKEN; GITHUB_TOKEN only needs to read the repo
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: Build & Test
