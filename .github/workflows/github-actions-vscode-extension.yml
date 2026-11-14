@@ -10,9 +10,10 @@ on:
     paths-ignore: ["**.md"]
   workflow_dispatch:
 
-# A new push to a PR cancels that PR's run still in progress; runs on dev/master always finish
+# A new push to a PR cancels that PR's run still in progress. Other runs (dev/master pushes,
+# manual runs) each get their own group, so a queued run is never replaced by a newer one.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Publishing uses VSCE_TOKEN / OPEN_VSX_TOKEN; GITHUB_TOKEN only needs to read the repo
