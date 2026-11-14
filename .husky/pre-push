@@ -1,0 +1,2 @@
+# Type-check both projects (~10s). The full VS Code test suite runs in CI.
+npm run compile

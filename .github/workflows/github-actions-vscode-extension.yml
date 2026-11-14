@@ -1,6 +1,20 @@
 name: VS Code Extension
 
-on: [push, pull_request]
+# Push runs only for the long-lived branches; feature branches are tested once,
+# through their pull request, instead of once for the push and again for the PR.
+on:
+  push:
+    branches: [dev, master]
+    paths-ignore: ["**.md"]
+  pull_request:
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+
+# A new push to a PR cancels that PR's run still in progress. Other runs (dev/master pushes,
+# manual runs) each get their own group, so a queued run is never replaced by a newer one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Publishing uses VSCE_TOKEN / OPEN_VSX_TOKEN; GITHUB_TOKEN only needs to read the repo
 permissions:
@@ -10,32 +24,36 @@ jobs:
   ci:
     name: Build & Test
     strategy:
+      # Let the other OS finish when one fails, to tell flaky from platform-specific failures
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    
+    timeout-minutes: 20
+
     steps:
       - name: ⤵️ Check out code from GitHub
         uses: actions/checkout@v7
-      
+
       - name: 🏗 Set up NodeJS
         uses: actions/setup-node@v7.1.0
         with:
           node-version: "24"
-        
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            src/language-service/package-lock.json
 
       - name: 🏗 Install NodeJS packages
-        run: |
-          npm ci
+        run: npm ci
+
       - name: 🚀 Run Linter
         run: npm run lint
-      
+
       - name: 🚀 Build Schema
         run: npm run schema
 
-      - name: 🚀 Run Compile
-        run: npm run compile
-      
+      # npm test compiles first, so there is no separate compile step
       - name: 🧪 Run tests (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a npm test
@@ -49,6 +67,7 @@ jobs:
     needs: ci
     if: success() && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: ⤵️ Check out code from GitHub
@@ -58,9 +77,10 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: "24"
+          cache: npm
 
       - name: 🏗 Install NodeJS packages
-        run: npm install
+        run: npm ci
 
       - name: 🚀 Run Linter
         run: npm run lint
