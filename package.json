@@ -749,7 +749,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "mocha": "^12.0.3",
-    "prettier": "^3.10.0",
+    "prettier": "^3.10.1",
     "rimraf": "6.1.4",
     "ts-loader": "^9.6.2",
     "ts-node": "10.9.2",
