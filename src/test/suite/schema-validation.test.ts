@@ -11,13 +11,23 @@ suite("Schema Validation Tests", () => {
     vscode.window.showInformationMessage("Starting schema validation tests...");
   });
   
-  // Assert that the language server reported a diagnostic with this exact message
-  function assertHasDiagnostic(diagnostics: vscode.Diagnostic[], message: string): void {
+  // Assert that the language server reported a diagnostic of this kind for this property.
+  // Matches the property name and the error kind rather than the full message, so a
+  // rewording in yaml-language-server doesn't fail the test.
+  function assertHasDiagnostic(
+    diagnostics: vscode.Diagnostic[],
+    property: string,
+    kind: RegExp,
+  ): void {
+    const propertyPattern = new RegExp(`\\b${property}\\b`);
     assert.ok(
-      diagnostics.some((d) => d.message === message),
-      `Expected diagnostic "${message}", got: ${JSON.stringify(diagnostics.map((d) => d.message))}`,
+      diagnostics.some((d) => propertyPattern.test(d.message) && kind.test(d.message)),
+      `Expected a ${kind} diagnostic for "${property}", got: ${JSON.stringify(diagnostics.map((d) => d.message))}`,
     );
   }
+
+  const NOT_ALLOWED = /not allowed/i;
+  const MISSING = /missing/i;
 
   // Create or update a test file with schema validation content
   async function createTestFile(content: string, fileName = "test-schema-validation.yaml"): Promise<vscode.TextDocument> {
@@ -127,7 +137,7 @@ automation:
     diagnostics.forEach(d => console.log(`Line ${d.range.start.line}: ${d.message}`));
     
     // End-to-end check through the real language server and yaml-language-server
-    assertHasDiagnostic(diagnostics, "Property unknown_property is not allowed.");
+    assertHasDiagnostic(diagnostics, "unknown_property", NOT_ALLOWED);
   });
   
   test("Script schema validation works", async () => {
@@ -154,8 +164,8 @@ script:
     console.log("Script diagnostics found:", diagnostics.length);
     diagnostics.forEach(d => console.log(`Line ${d.range.start.line}: ${d.message}`));
     
-    assertHasDiagnostic(diagnostics, "Missing property \"sequence\".");
-    assertHasDiagnostic(diagnostics, "Property sequenze is not allowed.");
+    assertHasDiagnostic(diagnostics, "sequence", MISSING);
+    assertHasDiagnostic(diagnostics, "sequenze", NOT_ALLOWED);
   });
   
   test("Sensor schema validation works", async () => {
@@ -180,7 +190,7 @@ sensor:
     console.log("Sensor diagnostics found:", diagnostics.length);
     diagnostics.forEach(d => console.log(`Line ${d.range.start.line}: ${d.message}`));
     
-    assertHasDiagnostic(diagnostics, "Missing property \"value_template\".");
-    assertHasDiagnostic(diagnostics, "Property invalid_property is not allowed.");
+    assertHasDiagnostic(diagnostics, "value_template", MISSING);
+    assertHasDiagnostic(diagnostics, "invalid_property", NOT_ALLOWED);
   });
 });
