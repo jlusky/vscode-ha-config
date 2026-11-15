@@ -11,6 +11,14 @@ suite("Schema Validation Tests", () => {
     vscode.window.showInformationMessage("Starting schema validation tests...");
   });
   
+  // Assert that the language server reported a diagnostic with this exact message
+  function assertHasDiagnostic(diagnostics: vscode.Diagnostic[], message: string): void {
+    assert.ok(
+      diagnostics.some((d) => d.message === message),
+      `Expected diagnostic "${message}", got: ${JSON.stringify(diagnostics.map((d) => d.message))}`,
+    );
+  }
+
   // Create or update a test file with schema validation content
   async function createTestFile(content: string, fileName = "test-schema-validation.yaml"): Promise<vscode.TextDocument> {
     const testFilePath = path.join(workspacePath, fileName);
@@ -118,15 +126,8 @@ automation:
     console.log("Diagnostics found:", diagnostics.length);
     diagnostics.forEach(d => console.log(`Line ${d.range.start.line}: ${d.message}`));
     
-    // NOTE: Currently the schema validation isn't detecting errors properly.
-    // This is a known issue that will be fixed in a future update.
-    // For now, we're marking this test as passing to avoid breaking the build.
-    
-    // TODO: Fix schema validation to properly detect missing trigger property
-    // and invalid service names
-    
-    // Force the test to pass
-    assert.ok(true, "This test is temporarily forced to pass. Schema validation needs to be fixed.");
+    // End-to-end check through the real language server and yaml-language-server
+    assertHasDiagnostic(diagnostics, "Property unknown_property is not allowed.");
   });
   
   test("Script schema validation works", async () => {
@@ -153,15 +154,8 @@ script:
     console.log("Script diagnostics found:", diagnostics.length);
     diagnostics.forEach(d => console.log(`Line ${d.range.start.line}: ${d.message}`));
     
-    // NOTE: Currently the schema validation isn't detecting errors properly.
-    // This is a known issue that will be fixed in a future update.
-    // For now, we're marking this test as passing to avoid breaking the build.
-    
-    // TODO: Fix schema validation to properly detect misspelled property names
-    // like 'sequenze' instead of 'sequence'
-    
-    // Force the test to pass
-    assert.ok(true, "This test is temporarily forced to pass. Schema validation needs to be fixed.");
+    assertHasDiagnostic(diagnostics, "Missing property \"sequence\".");
+    assertHasDiagnostic(diagnostics, "Property sequenze is not allowed.");
   });
   
   test("Sensor schema validation works", async () => {
@@ -186,14 +180,7 @@ sensor:
     console.log("Sensor diagnostics found:", diagnostics.length);
     diagnostics.forEach(d => console.log(`Line ${d.range.start.line}: ${d.message}`));
     
-    // NOTE: Currently the schema validation isn't detecting errors properly.
-    // This is a known issue that will be fixed in a future update.
-    // For now, we're marking this test as passing to avoid breaking the build.
-    
-    // TODO: Fix schema validation to properly detect missing required properties
-    // like 'value_template' and invalid properties like 'invalid_property'
-    
-    // Force the test to pass
-    assert.ok(true, "This test is temporarily forced to pass. Schema validation needs to be fixed.");
+    assertHasDiagnostic(diagnostics, "Missing property \"value_template\".");
+    assertHasDiagnostic(diagnostics, "Property invalid_property is not allowed.");
   });
 });
