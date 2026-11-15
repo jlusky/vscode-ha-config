@@ -3,26 +3,23 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettierConfig from "eslint-config-prettier";
 import stylistic from "@stylistic/eslint-plugin";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
-// Read the gitignore file
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-let ignores = [];
-try {
-  const gitignoreContent = readFileSync(`${__dirname}/.gitignore`, "utf8");
-  ignores = gitignoreContent
-    .split("\n")
-    .filter(line => line.trim() !== "" && !line.startsWith("//"))
-    .map(pattern => pattern.startsWith("!") ? pattern : `!${pattern}`);
-} catch {
-  // Could not read .gitignore file, ignores will not be set
-}
-
 export default tseslint.config(
+  // Global ignores: build output, dependencies, test downloads and Claude Code worktrees
+  {
+    ignores: [
+      "**/node_modules/**",
+      "**/out/**",
+      "**/dist/**",
+      "**/.vscode-test/**",
+      ".claude/**",
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...tseslint.configs.stylistic,
@@ -52,9 +49,5 @@ export default tseslint.config(
       "@stylistic/quotes": ["warn", "double"],
       "@stylistic/indent": ["warn", 2],
     },
-    // Ignore files that match patterns in .gitignore
-    ignores: ["**/node_modules/**", "**/out/**", ...ignores],
   },
-  // Global ignore: Claude Code worktrees are full checkouts of other branches
-  { ignores: [".claude/**"] },
 );

@@ -720,7 +720,7 @@
     "format:eslint": "eslint \"**/src/**/*.ts\" --fix",
     "format:prettier": "prettier \"**/src/**/*.json\" --write",
     "format": "npm run format:eslint && npm run format:prettier",
-    "lint:eslint": "eslint \"**/src/**/*.ts\"",
+    "lint:eslint": "eslint \"**/src/**/*.ts\" --max-warnings 0",
     "lint:prettier": "prettier \"**/src/**/*.json\" --check",
     "lint:types": "tsc",
     "lint": "npm run lint:eslint && npm run lint:prettier && npm run lint:types",
