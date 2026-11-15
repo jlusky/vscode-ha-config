@@ -175,7 +175,8 @@ jobs:
         run: npx vsce package -o vscode-ha-config.vsix
 
       - name: 🚀 VS Code Marketplace Publish
-        run: npx vsce publish --packagePath vscode-ha-config.vsix
+        # A rerun after a failed release upload must not fail on the already-published version
+        run: npx vsce publish --packagePath vscode-ha-config.vsix --skip-duplicate
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
 
