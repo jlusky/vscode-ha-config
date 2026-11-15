@@ -716,9 +716,10 @@
     ]
   },
   "scripts": {
-    "compile": "ts-node src/language-service/src/schemas/generateSchemas.ts --quick && tsc -p src/language-service/tsconfig.json && tsc -p ./",
-    "bundle": "node esbuild.mjs",
-    "bundle:watch": "node esbuild.mjs --watch",
+    "schema:quick": "ts-node src/language-service/src/schemas/generateSchemas.ts --quick",
+    "compile": "npm run schema:quick && tsc -p src/language-service/tsconfig.json && tsc -p ./",
+    "bundle": "npm run schema:quick && node esbuild.mjs",
+    "bundle:watch": "npm run schema:quick && node esbuild.mjs --watch",
     "format:eslint": "eslint \"**/src/**/*.ts\" --fix",
     "format:prettier": "prettier \"**/src/**/*.json\" --write",
     "format": "npm run format:eslint && npm run format:prettier",
@@ -729,10 +730,10 @@
     "schema": "ts-node src/language-service/src/schemas/generateSchemas.ts",
     "test-prep": "npm run compile && npm run bundle",
     "test": "npm run test-prep && vscode-test",
-    "test:old": "npm run compile && node ./out/test/runTest.js",
+    "test:old": "npm run test-prep && node ./out/test/runTest.js",
     "watch": "tsc -watch -p ./",
     "prepare": "husky",
-    "vscode:prepublish": "node esbuild.mjs --production"
+    "vscode:prepublish": "npm run schema:quick && node esbuild.mjs --production"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
