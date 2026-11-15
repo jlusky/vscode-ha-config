@@ -87,19 +87,30 @@ Create an [issue](https://github.com/jlusky/vscode-ha-config/issues/new/choose),
 
 # Telemetry
 
-When the extension starts, it sends one `extension.activate` event to an Azure
-Application Insights resource owned by this extension's publisher. It uses
-[@vscode/extension-telemetry](https://github.com/microsoft/vscode-extension-telemetry),
-which adds these fields to the event:
+The extension sends telemetry to an Azure Application Insights resource owned by
+this extension's publisher, using
+[@vscode/extension-telemetry](https://github.com/microsoft/vscode-extension-telemetry).
+It sends:
+
+- **Activation:** one `extension.activate` event each time the extension starts.
+- **Errors:** VS Code reports errors that the extension doesn't handle, with the
+  error message and stack trace.
+
+The library adds its
+[common properties](https://github.com/microsoft/vscode-extension-telemetry#common-properties)
+to every event:
 
 - Extension name and version
-- VS Code's machine ID and session ID
-- Operating system and platform version
+- VS Code version, product, UI kind and commit
+- VS Code's machine ID and session ID, and whether it's a new install
+- Operating system, platform version and architecture
+- Remote connection type, such as SSH or WSL
 
-The extension doesn't send your configuration, file contents, entity names or
-anything about your Home Assistant instance.
+The extension doesn't send your configuration or entity names, or anything about
+your Home Assistant instance. An error message could include details of what
+failed, such as a file name.
 
 Telemetry follows VS Code's `telemetry.telemetryLevel` setting: set it to `off`
-and the extension sends nothing. See VS Code's
+and the extension sends nothing, or to `error` to send only error reports. See VS Code's
 [telemetry documentation](https://code.visualstudio.com/docs/configure/telemetry)
 for details.
