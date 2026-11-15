@@ -8,10 +8,9 @@ on:
     paths:
       - "src/language-service/**"
       - ".github/**"
+  # No path filter here: the "Language Service result" job must report on every PR so it can
+  # be a required check. The changes job below skips the build when nothing relevant changed.
   pull_request:
-    paths:
-      - "src/language-service/**"
-      - ".github/**"
   workflow_dispatch:
 
 # A new push to a PR cancels that PR's run still in progress. Other runs (dev/master pushes,
@@ -25,8 +24,39 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - name: 🔍 Check for language service or workflow changes
+        id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          if printf '%s\n' "$files" | grep -qE '^(src/language-service/|\.github/)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No language service or workflow changes; skipping build"
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
   language-service:
     name: Language Service
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -79,3 +109,24 @@ jobs:
     #     NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     #   with:
     #     args: publish src/language-service
+
+  # The single required check for branch protection. It always runs, and passes only if
+  # every job it depends on succeeded or was skipped (no relevant changes).
+  result:
+    name: Language Service result
+    if: always()
+    needs: [changes, language-service]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: ✅ Check job results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in
+              success|skipped) ;;
+              *) echo "A required job did not succeed"; exit 1 ;;
+            esac
+          done

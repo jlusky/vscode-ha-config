@@ -6,8 +6,9 @@ on:
   push:
     branches: [dev, master]
     paths-ignore: ["**.md"]
+  # No path filter here: the "Extension result" job must report on every PR so it can be a
+  # required check. The changes job below skips the build for docs-only PRs instead.
   pull_request:
-    paths-ignore: ["**.md"]
   workflow_dispatch:
 
 # A new push to a PR cancels that PR's run still in progress. Other runs (dev/master pushes,
@@ -21,8 +22,39 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - name: 🔍 Check for changes other than Markdown
+        id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          if printf '%s\n' "$files" | grep -qvE '\.md$'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only Markdown changed; skipping build and tests"
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
   ci:
     name: Build & Test
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     strategy:
       # Let the other OS finish when one fails, to tell flaky from platform-specific failures
       fail-fast: false
@@ -61,6 +93,27 @@ jobs:
       - name: 🧪 Run tests (macOS)
         if: runner.os == 'macOS'
         run: npm test
+
+  # The single required check for branch protection. It always runs, and passes only if
+  # every job it depends on succeeded or was skipped (docs-only PR).
+  result:
+    name: Extension result
+    if: always()
+    needs: [changes, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: ✅ Check job results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in
+              success|skipped) ;;
+              *) echo "A required job did not succeed"; exit 1 ;;
+            esac
+          done
 
   publish:
     name: Publish Extension
