@@ -1,0 +1,62 @@
+name: Bug
+description: Something other than YAML validation isn't working
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include any error notifications and steps to reproduce.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: yaml
+    attributes:
+      label: Related YAML
+      description: If the problem involves a specific file, paste the relevant part.
+      render: yaml
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >-
+        From the Output panel, choose "Home Assistant Language Server" (or "Home Assistant
+        Auth" for connection problems) and copy anything relevant. Remove tokens and other
+        secrets first.
+      render: text
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system running VS Code
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: dropdown
+    id: file-access
+    attributes:
+      label: How VS Code reaches your config
+      options:
+        - Local disk
+        - Remote SSH
+        - Network share (SMB)
+        - Dev container / WSL
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Extension, VS Code and Home Assistant.
+      placeholder: "Extension 2.2.0, VS Code 1.106, Home Assistant 2026.11.1"
+    validations:
+      required: true

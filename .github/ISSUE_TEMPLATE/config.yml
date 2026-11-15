@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Home Assistant Community forum
+    url: https://community.home-assistant.io/
+    about: Questions about writing Home Assistant configuration itself.
+  - name: Upstream extension (keesschollaart81/vscode-home-assistant)
+    url: https://github.com/keesschollaart81/vscode-home-assistant/issues
+    about: Issues with the original Home Assistant Config Helper this project is forked from.
