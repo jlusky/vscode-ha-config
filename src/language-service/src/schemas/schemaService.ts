@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs/promises";
 import * as vscodeUri from "vscode-uri";
-import { JSONSchema } from "yaml-language-server/out/server/src/languageservice/jsonSchema";
+import { JSONSchema } from "yaml-language-server/out/src/languageservice/jsonSchema";
 import { HaFileInfo } from "../haConfig/dto";
 
 export class SchemaServiceForIncludes {

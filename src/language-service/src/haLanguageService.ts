@@ -13,11 +13,11 @@ import {
   CompletionItemKind,
 } from "vscode-languageserver-protocol";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { getLineOffsets } from "yaml-language-server/out/server/src/languageservice/utils/arrUtils";
+import { getLineOffsets } from "yaml-language-server/out/src/languageservice/utils/arrUtils";
 import {
   LanguageService,
   LanguageSettings,
-} from "yaml-language-server/out/server/src/languageservice/yamlLanguageService";
+} from "yaml-language-server/out/src/languageservice/yamlLanguageService";
 import { SchemaServiceForIncludes } from "./schemas/schemaService";
 import { AreaCompletionContribution } from "./completionHelpers/areas";
 import { DeviceCompletionContribution } from "./completionHelpers/deviceIds";

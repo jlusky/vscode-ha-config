@@ -7,7 +7,7 @@ import {
   Diagnostic,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { getLanguageService } from "yaml-language-server/out/server/src/languageservice/yamlLanguageService";
+import { getLanguageService } from "yaml-language-server/out/src/languageservice/yamlLanguageService";
 import { HaConnection } from "../language-service/src/home-assistant/haConnection";
 import { ConfigurationService } from "../language-service/src/configuration";
 import { HomeAssistantConfiguration } from "../language-service/src/haConfig/haConfig";

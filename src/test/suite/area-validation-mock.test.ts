@@ -4,7 +4,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { CompletionItem, CompletionItemKind, MarkupContent } from "vscode-languageserver-protocol";
 import { IHaConnection } from "../../language-service/src/home-assistant/haConnection";
 import { HomeAssistantLanguageService } from "../../language-service/src/haLanguageService";
-import { getLanguageService } from "yaml-language-server/out/server/src/languageservice/yamlLanguageService";
+import { getLanguageService } from "yaml-language-server/out/src/languageservice/yamlLanguageService";
 import { SchemaServiceForIncludes } from "../../language-service/src/schemas/schemaService";
 import { HomeAssistantConfiguration } from "../../language-service/src/haConfig/haConfig";
 
