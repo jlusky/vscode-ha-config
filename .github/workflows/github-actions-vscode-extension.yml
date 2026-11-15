@@ -174,8 +174,9 @@ jobs:
       - name: 🚀 Run Compile
         run: npm run compile
 
+      # vscode:prepublish bundles dist/ with esbuild; node_modules isn't shipped
       - name: 📦 Package
-        run: npx vsce package -o vscode-ha-config.vsix
+        run: npx vsce package --no-dependencies -o vscode-ha-config.vsix
 
       - name: 🚀 VS Code Marketplace Publish
         # A rerun after a failed release upload must not fail on the already-published version

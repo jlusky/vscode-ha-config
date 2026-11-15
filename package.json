@@ -38,7 +38,7 @@
     "home-assistant",
     "homeassistant"
   ],
-  "main": "./out/extension",
+  "main": "./dist/extension.js",
   "contributes": {
     "configuration": [
       {
@@ -75,11 +75,11 @@
     "snippets": [
       {
         "language": "home-assistant",
-        "path": "./out/snippets/homeassistant_automation.json"
+        "path": "./dist/snippets/homeassistant_automation.json"
       },
       {
         "language": "home-assistant",
-        "path": "./out/snippets/homeassistant_script.json"
+        "path": "./dist/snippets/homeassistant_script.json"
       }
     ],
     "languages": [
@@ -99,7 +99,7 @@
       {
         "comments": "unfortunately this dummy entry is necessary for embedding to work",
         "id": "home-assistant-jinja",
-        "configuration": "./jinja-language-configuration.json"
+        "configuration": "./syntaxes/jinja-language-configuration.json"
       }
     ],
     "grammars": [
@@ -717,6 +717,8 @@
   },
   "scripts": {
     "compile": "ts-node src/language-service/src/schemas/generateSchemas.ts --quick && tsc -p src/language-service/tsconfig.json && tsc -p ./",
+    "bundle": "node esbuild.mjs",
+    "bundle:watch": "node esbuild.mjs --watch",
     "format:eslint": "eslint \"**/src/**/*.ts\" --fix",
     "format:prettier": "prettier \"**/src/**/*.json\" --write",
     "format": "npm run format:eslint && npm run format:prettier",
@@ -725,10 +727,12 @@
     "lint:types": "tsc",
     "lint": "npm run lint:eslint && npm run lint:prettier && npm run lint:types",
     "schema": "ts-node src/language-service/src/schemas/generateSchemas.ts",
-    "test": "npm run compile && vscode-test",
+    "test-prep": "npm run compile && npm run bundle",
+    "test": "npm run test-prep && vscode-test",
     "test:old": "npm run compile && node ./out/test/runTest.js",
     "watch": "tsc -watch -p ./",
-    "prepare": "husky"
+    "prepare": "husky",
+    "vscode:prepublish": "node esbuild.mjs --production"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -744,6 +748,7 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.1.1",
+    "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "glob": "^14.0.6",
