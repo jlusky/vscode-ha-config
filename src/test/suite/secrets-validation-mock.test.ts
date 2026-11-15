@@ -6,7 +6,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { IHaConnection } from "../../language-service/src/home-assistant/haConnection";
 import { HassEntities } from "home-assistant-js-websocket";
 import { HomeAssistantConfiguration } from "../../language-service/src/haConfig/haConfig";
-import { getLanguageService } from "yaml-language-server/out/server/src/languageservice/yamlLanguageService";
+import { getLanguageService } from "yaml-language-server/out/src/languageservice/yamlLanguageService";
 import { SchemaServiceForIncludes } from "../../language-service/src/schemas/schemaService";
 
 // Mock file accessor for testing secrets
