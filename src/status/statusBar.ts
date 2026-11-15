@@ -22,7 +22,7 @@ export class HomeAssistantStatusBar {
     );
     
     // Set command to be executed when clicking the status bar item
-    this.statusBarItem.command = "vscode-home-assistant.manageAuth";
+    this.statusBarItem.command = "vscode-ha-config.manageAuth";
     
     // Set initial status
     this.updateStatus("disconnected");
@@ -56,7 +56,7 @@ export class HomeAssistantStatusBar {
       this.checkInProgress = true;
       
       // Get config to check if we should ignore certificates / use mock mode
-      const config = vscode.workspace.getConfiguration("vscode-home-assistant");
+      const config = vscode.workspace.getConfiguration("vscode-ha-config");
       if (config.get<boolean>("devMockConnection")) {
         this.instanceName = "Dev Mock HA";
         this.updateStatus("connected");
@@ -118,7 +118,7 @@ export class HomeAssistantStatusBar {
       } else {
         vscode.window.showErrorMessage("Home Assistant URL is not configured. Please set it first.");
         // Show the authentication management dialog if URL is not set
-        vscode.commands.executeCommand("vscode-home-assistant.manageAuth");
+        vscode.commands.executeCommand("vscode-ha-config.manageAuth");
       }
     } catch (error) {
       console.error("Error opening Home Assistant in browser:", error);
@@ -135,17 +135,17 @@ export class HomeAssistantStatusBar {
       case "connected":
         this.statusBarItem.text = `$(home) ${this.instanceName || "Connected"}`;
         this.statusBarItem.tooltip = "Click to open Home Assistant in browser";
-        this.statusBarItem.command = "vscode-home-assistant.openInBrowser";
+        this.statusBarItem.command = "vscode-ha-config.openInBrowser";
         break;
       case "disconnected":
         this.statusBarItem.text = "$(home) Connect";
         this.statusBarItem.tooltip = "Connect to Home Assistant";
-        this.statusBarItem.command = "vscode-home-assistant.manageAuth";
+        this.statusBarItem.command = "vscode-ha-config.manageAuth";
         break;
       case "error":
         this.statusBarItem.text = "$(home) Error";
         this.statusBarItem.tooltip = "Error connecting to Home Assistant";
-        this.statusBarItem.command = "vscode-home-assistant.manageAuth";
+        this.statusBarItem.command = "vscode-ha-config.manageAuth";
         break;
     }
   }

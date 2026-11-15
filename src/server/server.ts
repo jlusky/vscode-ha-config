@@ -33,7 +33,7 @@ connection.onInitialize(async (params) => {
   );
 
   // Check if initialization contains the token in custom data
-  const haConfig = params.initializationOptions && params.initializationOptions["vscode-home-assistant"];
+  const haConfig = params.initializationOptions && params.initializationOptions["vscode-ha-config"];
   
   if (haConfig) {
     // Extract token
@@ -215,7 +215,7 @@ connection.onInitialize(async (params) => {
     console.log("Received configuration change from VS Code");
     
     // Check for token in incoming configuration before applying changes
-    const haConfig = config.settings && config.settings["vscode-home-assistant"];
+    const haConfig = config.settings && config.settings["vscode-ha-config"];
     if (haConfig) {
       if (haConfig.longLivedAccessToken) {
         const token = haConfig.longLivedAccessToken;

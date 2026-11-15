@@ -7,3 +7,17 @@ src/**
 **/tslint.json
 **/*.map
 **/*.ts
+.claude/**
+.github/**
+.husky/**
+test-workspace/**
+test-ha-detection/**
+test-non-ha-detection/**
+eslint.config.mjs
+.prettierrc*
+.lintstagedrc*
+.coderabbit.yaml
+.gitattributes
+.vscode-test.*
+.prettierignore
+.nvmrc
