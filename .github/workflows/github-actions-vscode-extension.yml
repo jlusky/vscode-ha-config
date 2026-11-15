@@ -137,6 +137,9 @@ jobs:
     permissions:
       # Attach the .vsix to the release
       contents: write
+      # Marketplace Trusted Publishing: vsce exchanges GitHub's OIDC token for a
+      # short-lived Marketplace credential, so there is no publishing secret
+      id-token: write
     env:
       TAG: ${{ github.event.release.tag_name }}
 
@@ -176,9 +179,8 @@ jobs:
 
       - name: 🚀 VS Code Marketplace Publish
         # A rerun after a failed release upload must not fail on the already-published version
-        run: npx vsce publish --packagePath vscode-ha-config.vsix --skip-duplicate
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+        # Needs a Trusted Publishing policy for this repository and workflow on the publisher
+        run: npx vsce publish --oidc --packagePath vscode-ha-config.vsix --skip-duplicate
 
       - name: 📎 Attach the .vsix to the release
         run: gh release upload "$TAG" vscode-ha-config.vsix --clobber
