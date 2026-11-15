@@ -9,7 +9,8 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/keesschollaart81/home-assistant-language-service.git"
+    "url": "git+https://github.com/jlusky/vscode-ha-config.git",
+    "directory": "src/language-service"
   },
   "keywords": [
     "home-assistant",
@@ -21,9 +22,9 @@
   "author": "Kees Schollaart",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/keesschollaart81/home-assistant-language-service/issues"
+    "url": "https://github.com/jlusky/vscode-ha-config/issues"
   },
-  "homepage": "https://github.com/keesschollaart81/home-assistant-language-service#readme",
+  "homepage": "https://github.com/jlusky/vscode-ha-config/tree/dev/src/language-service#readme",
   "scripts": {
     "clean": "rimraf lib",
     "compile": "ts-node src/schemas/generateSchemas.ts --quick && tsc -p .",

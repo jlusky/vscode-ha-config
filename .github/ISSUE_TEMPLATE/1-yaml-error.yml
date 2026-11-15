@@ -1,0 +1,48 @@
+name: YAML error or warning
+description: The extension flags valid Home Assistant YAML, or misses invalid YAML
+labels: ["yaml"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, check which part is complaining:
+
+        - **Generic YAML syntax errors** (indentation, quoting, duplicate keys) come from the
+          underlying parser. If the YAML is valid but still flagged, it may belong with
+          [yaml-language-server](https://github.com/redhat-developer/yaml-language-server/issues).
+        - **Home Assistant schema errors** (an unknown option, a wrong type for an integration)
+          usually mean the schema is out of date. See
+          [how to update the schemas](https://github.com/keesschollaart81/vscode-home-assistant/wiki/HowTo:-Update-the-schema's).
+  - type: textarea
+    id: message
+    attributes:
+      label: Error or warning shown
+      description: Copy the message from the Problems panel.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: yaml
+    attributes:
+      label: YAML that triggers it
+      description: The smallest snippet that reproduces the problem.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: For example, a link to the Home Assistant docs showing the option is valid.
+    validations:
+      required: true
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.11.1"
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension version
+      placeholder: "2.2.0"
