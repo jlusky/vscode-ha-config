@@ -12,16 +12,14 @@
 
 3. Configure the connection to Home Assistant via the HA Section in the VS Code Settings UI
 
-   More details in [the How-To in the Wiki](https://github.com/keesschollaart81/vscode-home-assistant/wiki/Configure-connection-to-HA)
+   More details in [the How-To in the Wiki](https://github.com/jlusky/vscode-ha-config/wiki/Configure-connection-and-authentication)
 
-4. Enjoy the features showcased below 👇
+4. Continue reading in the Wiki:
 
-5. Continue reading in the Wiki:
-
-   - [Configure connection to HA](https://github.com/keesschollaart81/vscode-home-assistant/wiki/Configure-connection-to-HA)
-   - [VS Code Remote SSH](https://github.com/keesschollaart81/vscode-home-assistant/wiki/VS-Code-Remote-SSH)
-   - [Your config, local or remote?](https://github.com/keesschollaart81/vscode-home-assistant/wiki/Your-config,-local-or-remote%3F)
-   - [The troubleshooting guide](https://github.com/keesschollaart81/vscode-home-assistant/wiki/Troubleshooting)
+   - [Configure connection and authentication](https://github.com/jlusky/vscode-ha-config/wiki/Configure-connection-and-authentication)
+   - [VS Code Remote SSH](https://github.com/jlusky/vscode-ha-config/wiki/VS-Code-Remote-SSH)
+   - [Your config, local or remote?](https://github.com/jlusky/vscode-ha-config/wiki/Your-config,-local-or-remote%3F)
+   - [The troubleshooting guide](https://github.com/jlusky/vscode-ha-config/wiki/Troubleshooting)
 
 # Features
 
@@ -69,8 +67,8 @@ Evaluate jinja templates via Home Assistant's API and see how they would render.
 
 # Contribution
 
-- [How to update the schemas](https://github.com/keesschollaart81/vscode-home-assistant/wiki/HowTo:-Update-the-schema's)
-- [Local Development](https://github.com/keesschollaart81/vscode-home-assistant/wiki/Local-development-of-this-Extension)
+- [How to update the schemas](https://github.com/jlusky/vscode-ha-config/wiki/HowTo:-Update-the-schema's)
+- [Local Development](https://github.com/jlusky/vscode-ha-config/wiki/Local-development-of-this-Extension)
 
 # Release Notes
 
@@ -78,12 +76,7 @@ Read all the recent changes in the [GitHub releases section](https://github.com/
 
 # Feedback / Ideas
 
-Create an [issue](https://github.com/jlusky/vscode-ha-config/issues/new/choose), reach out to me on [Twitter](https://twitter.com/keesschollaart) or the [Home Assistant Discord](https://discord.gg/c5DvZ4e).
-
-# Things to do / up for grabs
-
-- [ ] Go to Definition for entities, scripts and automations
-- [ ] Check local config with HA Server
+Create an [issue](https://github.com/jlusky/vscode-ha-config/issues/new/choose).
 
 # Telemetry
 
