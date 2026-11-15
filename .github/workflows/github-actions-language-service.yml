@@ -45,7 +45,14 @@ jobs:
             echo "relevant=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          # Include both sides of a rename, so moving a file out of scope still counts
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate \
+            --jq '.[] | .filename, (.previous_filename // empty)')
+          # The API lists at most 3000 files; if the list may be cut short, don't skip
+          if [ "$(printf '%s\n' "$files" | wc -l)" -ge 3000 ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if printf '%s\n' "$files" | grep -qE '^(src/language-service/|\.github/)'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
