@@ -55,4 +55,6 @@ export default tseslint.config(
     // Ignore files that match patterns in .gitignore
     ignores: ["**/node_modules/**", "**/out/**", ...ignores],
   },
+  // Global ignore: Claude Code worktrees are full checkouts of other branches
+  { ignores: [".claude/**"] },
 );

@@ -1,2 +1,9 @@
-.husky/* text eol=lf
-test-workspace/*.yaml text eol=lf
+# Check out every text file with LF, whatever core.autocrlf is set to. Prettier
+# and npm both write LF, so CRLF checkouts on Windows made `npm run lint` fail
+# locally and left package.json "modified" after npm edits.
+* text=auto eol=lf
+
+# Binary files: never convert
+*.png binary
+*.gif binary
+*.psd binary
