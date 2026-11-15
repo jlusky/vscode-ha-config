@@ -1,6 +1,6 @@
 <h1 align="center">
 
-<img src="https://raw.githubusercontent.com/jlusky/vscode-ha-config/dev/assets/header.png" alt="HA Config - Home Assistant Configuration for Visual Studio Code"/>
+<img src="https://raw.githubusercontent.com/jlusky/vscode-ha-config/dev/assets/header.png" width="720" alt="HA Config - Home Assistant Configuration for Visual Studio Code"/>
 
 </h1>
 
