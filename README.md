@@ -87,17 +87,19 @@ Create an [issue](https://github.com/jlusky/vscode-ha-config/issues/new/choose),
 
 # Telemetry
 
-This extension collects telemetry data to help us build a better experience for
-using VS Code with Home Assistant. We use [vscode-extension-telemetry](https://github.com/Microsoft/vscode-extension-telemetry),
-which reports the following data:
+When the extension starts, it sends one `extension.activate` event to an Azure
+Application Insights resource owned by this extension's publisher. It uses
+[@vscode/extension-telemetry](https://github.com/microsoft/vscode-extension-telemetry),
+which adds these fields to the event:
 
-- Extension name
-- Extension version
-- Machine ID and session ID from VS Code
-- Operating system
-- Platform version
+- Extension name and version
+- VS Code's machine ID and session ID
+- Operating system and platform version
 
-Additionally, if the language server fails to activate, we report the diagnostic
-data the language server produces. The extension respects the `telemetry.enableTelemetry`
-setting, which you can learn more about at VS Code's
-[telemetry FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
+The extension doesn't send your configuration, file contents, entity names or
+anything about your Home Assistant instance.
+
+Telemetry follows VS Code's `telemetry.telemetryLevel` setting: set it to `off`
+and the extension sends nothing. See VS Code's
+[telemetry documentation](https://code.visualstudio.com/docs/configure/telemetry)
+for details.

@@ -15,6 +15,14 @@ import { repairAuthConfiguration } from "./auth/repair";
 import { HomeAssistantStatusBar } from "./status/statusBar";
 import { registerReloadCommands } from "./commands/reloadCommands";
 
+// Application Insights resource for this extension (owned by the blown publisher).
+// Connection strings are not secrets: they only allow sending data, and ship in every .vsix.
+const telemetryConnectionString =
+  "InstrumentationKey=ad523cda-deb8-4729-9c8e-c25bd1dbcb65;" +
+  "IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;" +
+  "LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;" +
+  "ApplicationId=c593e0b0-becc-446f-9b29-6eb3baa503de";
+
 let reporter: TelemetryReporter;
 
 const documentSelector = [
@@ -47,7 +55,7 @@ export async function activate(
     console.error("Failed to migrate credentials:", error);
   }
 
-  reporter = new TelemetryReporter("InstrumentationKey=ff172110-5bb2-4041-9f31-e157f1efda56");
+  reporter = new TelemetryReporter(telemetryConnectionString);
 
   try {
     reporter.sendTelemetryEvent("extension.activate");
