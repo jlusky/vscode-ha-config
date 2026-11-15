@@ -1,6 +1,6 @@
 {
   "name": "vscode-ha-config",
-  "displayName": "Home Assistant Config Helper",
+  "displayName": "HA Config - Home Assistant Configuration",
   "description": " Completion for entity-id's in Home Assistant Configurations",
   "version": "2.2.0",
   "preview": false,
@@ -42,7 +42,7 @@
   "contributes": {
     "configuration": [
       {
-        "title": "Home Assistant Config Helper",
+        "title": "HA Config - Home Assistant Configuration",
         "properties": {
           "vscode-ha-config.ignoreCertificates": {
             "type": "boolean",
