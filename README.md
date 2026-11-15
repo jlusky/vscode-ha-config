@@ -87,17 +87,30 @@ Create an [issue](https://github.com/jlusky/vscode-ha-config/issues/new/choose),
 
 # Telemetry
 
-This extension collects telemetry data to help us build a better experience for
-using VS Code with Home Assistant. We use [vscode-extension-telemetry](https://github.com/Microsoft/vscode-extension-telemetry),
-which reports the following data:
+The extension sends telemetry to an Azure Application Insights resource owned by
+this extension's publisher, using
+[@vscode/extension-telemetry](https://github.com/microsoft/vscode-extension-telemetry).
+It sends:
 
-- Extension name
-- Extension version
-- Machine ID and session ID from VS Code
-- Operating system
-- Platform version
+- **Activation:** one `extension.activate` event each time the extension starts.
+- **Errors:** VS Code reports errors that the extension doesn't handle, with the
+  error message and stack trace.
 
-Additionally, if the language server fails to activate, we report the diagnostic
-data the language server produces. The extension respects the `telemetry.enableTelemetry`
-setting, which you can learn more about at VS Code's
-[telemetry FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
+The library adds its
+[common properties](https://github.com/microsoft/vscode-extension-telemetry#common-properties)
+to every event:
+
+- Extension name and version
+- VS Code version, product, UI kind and commit
+- VS Code's machine ID and session ID, and whether it's a new install
+- Operating system, platform version and architecture
+- Remote connection type, such as SSH or WSL
+
+The extension doesn't send your configuration or entity names, or anything about
+your Home Assistant instance. An error message could include details of what
+failed, such as a file name.
+
+Telemetry follows VS Code's `telemetry.telemetryLevel` setting: set it to `off`
+and the extension sends nothing, or to `error` to send only error reports. See VS Code's
+[telemetry documentation](https://code.visualstudio.com/docs/configure/telemetry)
+for details.
