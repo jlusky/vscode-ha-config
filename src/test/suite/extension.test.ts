@@ -5,7 +5,7 @@ import * as path from "path";
 suite("Extension Test Suite", () => {
   suiteSetup(async () => {
     // Activate the extension
-    await vscode.extensions.getExtension("keesschollaart.vscode-ha-config")?.activate();
+    await vscode.extensions.getExtension("blown.vscode-ha-config")?.activate();
     
     // Show a message to indicate tests are starting
     vscode.window.showInformationMessage("Starting Home Assistant extension tests...");
@@ -16,14 +16,14 @@ suite("Extension Test Suite", () => {
   });
 
   test("Extension is activated", async () => {
-    const extension = vscode.extensions.getExtension("keesschollaart.vscode-ha-config");
+    const extension = vscode.extensions.getExtension("blown.vscode-ha-config");
     assert.ok(extension, "Extension is installed");
     assert.strictEqual(extension?.isActive, true, "Extension is active");
   });
 
   test("Commands are registered", async () => {
     const commands = await vscode.commands.getCommands(true);
-    const extensionCommands = commands.filter(cmd => cmd.startsWith("vscode-home-assistant."));
+    const extensionCommands = commands.filter(cmd => cmd.startsWith("vscode-ha-config."));
     
     // Check that essential commands are registered
     // Note: We check for any commands registered by the extension, not specific ones
@@ -34,9 +34,9 @@ suite("Extension Test Suite", () => {
   test("Restart commands are registered", async () => {
     const commands = await vscode.commands.getCommands(true);
     const restartCommands = [
-      "vscode-home-assistant.homeassistantRestart",
-      "vscode-home-assistant.hassioAddonRestartGitPull",
-      "vscode-home-assistant.hassioHostReboot"
+      "vscode-ha-config.homeassistantRestart",
+      "vscode-ha-config.hassioAddonRestartGitPull",
+      "vscode-ha-config.hassioHostReboot"
     ];
     
     for (const command of restartCommands) {
@@ -47,10 +47,10 @@ suite("Extension Test Suite", () => {
   test("Reload commands are registered", async () => {
     const commands = await vscode.commands.getCommands(true);
     const reloadCommands = [
-      "vscode-home-assistant.reloadAll",
-      "vscode-home-assistant.showReloadIntegrations",
-      "vscode-home-assistant.scriptReload",
-      "vscode-home-assistant.automationReload"
+      "vscode-ha-config.reloadAll",
+      "vscode-ha-config.showReloadIntegrations",
+      "vscode-ha-config.scriptReload",
+      "vscode-ha-config.automationReload"
     ];
     
     for (const command of reloadCommands) {
@@ -81,12 +81,12 @@ suite("Extension Test Suite", () => {
     const commands = await vscode.commands.getCommands(true);
     
     const restartCommands = commands.filter(cmd => 
-      cmd.startsWith("vscode-home-assistant.") && 
+      cmd.startsWith("vscode-ha-config.") && 
       (cmd.toLowerCase().includes("restart") || cmd.toLowerCase().includes("reboot"))
     );
     
     const reloadCommands = commands.filter(cmd => 
-      cmd.startsWith("vscode-home-assistant.") && 
+      cmd.startsWith("vscode-ha-config.") && 
       cmd.toLowerCase().includes("reload")
     );
     
@@ -102,9 +102,9 @@ suite("Extension Test Suite", () => {
     
     // Verify specific restart commands that were broken in issue #3634
     const criticalRestartCommands = [
-      "vscode-home-assistant.homeassistantRestart",
-      "vscode-home-assistant.hassioAddonRestartGitPull", 
-      "vscode-home-assistant.hassioHostReboot"
+      "vscode-ha-config.homeassistantRestart",
+      "vscode-ha-config.hassioAddonRestartGitPull", 
+      "vscode-ha-config.hassioHostReboot"
     ];
     
     for (const cmd of criticalRestartCommands) {

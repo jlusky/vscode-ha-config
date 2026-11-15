@@ -16,6 +16,10 @@ updates:
       # Stay on Node 24.x type definitions; ignore @types/node 25+
       - dependency-name: "@types/node"
         versions: [">=25.0.0"]
+      # Must match engines.vscode (^1.101.0); vsce refuses to package newer API types.
+      # Raise both together when the minimum VS Code version goes up.
+      - dependency-name: "@types/vscode"
+        versions: [">=1.102.0"]
   - package-ecosystem: npm
     directory: "/src/language-service"
     schedule:

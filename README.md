@@ -6,7 +6,7 @@
 
 # Getting started
 
-1. Install via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=keesschollaart.vscode-home-assistant)
+1. Install via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=blown.vscode-ha-config)
 
 2. Open your (local copy of the) Home Assistant Configuration with VS Code
 

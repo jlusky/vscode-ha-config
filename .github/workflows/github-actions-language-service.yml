@@ -1,10 +1,10 @@
 name: Language Service
 
-# Push runs only for the long-lived branches; feature branches are tested once,
-# through their pull request, instead of once for the push and again for the PR.
+# Push runs only for dev; feature branches are tested once, through their pull request,
+# instead of once for the push and again for the PR.
 on:
   push:
-    branches: [dev, master]
+    branches: [dev]
     paths:
       - "src/language-service/**"
       - ".github/**"
@@ -13,13 +13,13 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A new push to a PR cancels that PR's run still in progress. Other runs (dev/master pushes,
+# A new push to a PR cancels that PR's run still in progress. Other runs (dev pushes,
 # manual runs) each get their own group, so a queued run is never replaced by a newer one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Publishing uses NPM_TOKEN; GITHUB_TOKEN only needs to read the repo
+# GITHUB_TOKEN only needs to read the repo
 permissions:
   contents: read
 
@@ -93,29 +93,6 @@ jobs:
       - name: 🚀 Run Compile
         working-directory: src/language-service
         run: npm run compile
-
-      - name: 🏗 Create .npmrc
-        if: success() && github.ref == 'refs/heads/master'
-        run:
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" >> ~/.npmrc
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: 🚀 Publish to NPM Registry
-        if: success() && github.ref == 'refs/heads/master'
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm publish src/language-service
-
-    # - name: NPM Publish to Registry
-    #   uses: actions/npm@master
-    #   if: success() && github.ref == 'refs/heads/master'
-    #   env:
-    #     NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    #   with:
-    #     args: publish src/language-service
 
   # The single required check for branch protection. It always runs, and passes only if
   # every job it depends on succeeded or was skipped (no relevant changes).

@@ -56,7 +56,7 @@ export class ConfigurationService implements IConfigurationService {
 
     // Get the Home Assistant configuration section
     const incoming = config.settings[
-      "vscode-home-assistant"
+      "vscode-ha-config"
     ] as HomeAssistantConfiguration;
     
     // Update configuration values if we have a valid configuration object

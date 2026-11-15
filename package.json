@@ -13,7 +13,7 @@
     "Formatters",
     "Snippets"
   ],
-  "publisher": "keesschollaart",
+  "publisher": "blown",
   "repository": {
     "type": "git",
     "url": "https://github.com/jlusky/vscode-ha-config"
@@ -44,21 +44,21 @@
       {
         "title": "Home Assistant Config Helper",
         "properties": {
-          "vscode-home-assistant.ignoreCertificates": {
+          "vscode-ha-config.ignoreCertificates": {
             "type": "boolean",
             "description": "Enable insecure transport. Check this if you want to connect over an insecure HTTPS transport with a invalid certificate!"
           },
-          "vscode-home-assistant.disableAutomaticFileAssociation": {
+          "vscode-ha-config.disableAutomaticFileAssociation": {
             "type": "boolean",
             "default": false,
             "description": "Disable automatic association of YAML files with the Home Assistant language. When enabled, the extension will not automatically set file associations for YAML files, even in detected Home Assistant workspaces."
           },
-          "vscode-home-assistant.autoRenderTemplates": {
+          "vscode-ha-config.autoRenderTemplates": {
             "type": "boolean",
             "default": true,
             "description": "Enable automatic rendering of Home Assistant templates on hover. When enabled, templates will be rendered and displayed as previews when hovering over template values in YAML files."
           },
-          "vscode-home-assistant.devMockConnection": {
+          "vscode-ha-config.devMockConnection": {
             "type": "boolean",
             "default": false,
             "description": "Use a static mock Home Assistant connection with fixed entities, devices, areas, floors, labels, and services. Intended for Extension Development Host / test-workspace validation without a live Home Assistant instance. Reload the window after changing this setting."
@@ -206,212 +206,212 @@
     ],
     "commands": [
       {
-        "command": "vscode-home-assistant.reloadAll",
+        "command": "vscode-ha-config.reloadAll",
         "title": "Reload all integrations",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.scriptReload",
+        "command": "vscode-ha-config.scriptReload",
         "title": "Reload Scripts",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.groupReload",
+        "command": "vscode-ha-config.groupReload",
         "title": "Reload Groups",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.homeassistantCheckConfig",
+        "command": "vscode-ha-config.homeassistantCheckConfig",
         "title": "Check Configuration (remote!)",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.homeassistantReloadCoreConfig",
+        "command": "vscode-ha-config.homeassistantReloadCoreConfig",
         "title": "Reload Configuration",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.homeassistantRestart",
+        "command": "vscode-ha-config.homeassistantRestart",
         "title": "Restart Home Assistant",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.automationReload",
+        "command": "vscode-ha-config.automationReload",
         "title": "Reload Automations",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.conversationReload",
+        "command": "vscode-ha-config.conversationReload",
         "title": "Reload conversation intents",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.sceneReload",
+        "command": "vscode-ha-config.sceneReload",
         "title": "Reload Scenes",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.themeReload",
+        "command": "vscode-ha-config.themeReload",
         "title": "Reload Themes",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.inputReload",
+        "command": "vscode-ha-config.inputReload",
         "title": "Reload Inputs",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.homekitReload",
+        "command": "vscode-ha-config.homekitReload",
         "title": "Reload HomeKit",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.filesizeReload",
+        "command": "vscode-ha-config.filesizeReload",
         "title": "Reload File Size",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.minMaxReload",
+        "command": "vscode-ha-config.minMaxReload",
         "title": "Reload Min/Max",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.genericThermostatReload",
+        "command": "vscode-ha-config.genericThermostatReload",
         "title": "Reload Generic Thermostat",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.genericCameraReload",
+        "command": "vscode-ha-config.genericCameraReload",
         "title": "Reload Generic Camera",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.pingReload",
+        "command": "vscode-ha-config.pingReload",
         "title": "Reload Ping",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.trendReload",
+        "command": "vscode-ha-config.trendReload",
         "title": "Reload Trend",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.historyStatsReload",
+        "command": "vscode-ha-config.historyStatsReload",
         "title": "Reload History Stats",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.universalReload",
+        "command": "vscode-ha-config.universalReload",
         "title": "Reload Universal Media Player",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.statisticsReload",
+        "command": "vscode-ha-config.statisticsReload",
         "title": "Reload Statistics",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.filterReload",
+        "command": "vscode-ha-config.filterReload",
         "title": "Reload Filter",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.restReload",
+        "command": "vscode-ha-config.restReload",
         "title": "Reload REST",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.commandLineReload",
+        "command": "vscode-ha-config.commandLineReload",
         "title": "Reload Command Line",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.bayesianReload",
+        "command": "vscode-ha-config.bayesianReload",
         "title": "Reload Bayesian",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.telegramReload",
+        "command": "vscode-ha-config.telegramReload",
         "title": "Reload Telegram",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.smtpReload",
+        "command": "vscode-ha-config.smtpReload",
         "title": "Reload SMTP",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.mqttReload",
+        "command": "vscode-ha-config.mqttReload",
         "title": "Reload MQTT",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.rpioGpioReload",
+        "command": "vscode-ha-config.rpioGpioReload",
         "title": "Reload Raspberry Pi GPIO",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.knxReload",
+        "command": "vscode-ha-config.knxReload",
         "title": "Reload KNX",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.templateReload",
+        "command": "vscode-ha-config.templateReload",
         "title": "Reload Template Entities",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.customTemplatesReload",
+        "command": "vscode-ha-config.customTemplatesReload",
         "title": "Reload custom Jinja2 templates",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.hassioAddonRestartGitPull",
+        "command": "vscode-ha-config.hassioAddonRestartGitPull",
         "title": "Restart 'Git Pull' Add-on",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.hassioHostReboot",
+        "command": "vscode-ha-config.hassioHostReboot",
         "title": "Reboot Supervisor Host",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.getErrorLog",
+        "command": "vscode-ha-config.getErrorLog",
         "title": "Get Error Logs",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.renderTemplate",
+        "command": "vscode-ha-config.renderTemplate",
         "title": "Render Template",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.manageAuth",
+        "command": "vscode-ha-config.manageAuth",
         "title": "Manage Home Assistant Authentication",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.debugAuth",
+        "command": "vscode-ha-config.debugAuth",
         "title": "Debug Home Assistant Authentication",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.repairAuth",
+        "command": "vscode-ha-config.repairAuth",
         "title": "Repair Home Assistant Authentication Configuration",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.testConnection",
+        "command": "vscode-ha-config.testConnection",
         "title": "Test Home Assistant Connection",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.openInBrowser",
+        "command": "vscode-ha-config.openInBrowser",
         "title": "Open Home Assistant in Browser",
         "category": "Home Assistant"
       },
       {
-        "command": "vscode-home-assistant.showReloadIntegrations",
+        "command": "vscode-ha-config.showReloadIntegrations",
         "title": "Reload specific integration",
         "category": "Home Assistant"
       }
@@ -431,157 +431,157 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "vscode-home-assistant.renderTemplate",
+          "command": "vscode-ha-config.renderTemplate",
           "when": "editorHasSelection"
         },
         {
-          "command": "vscode-home-assistant.showReloadIntegrations"
+          "command": "vscode-ha-config.showReloadIntegrations"
         },
         {
-          "command": "vscode-home-assistant.reloadAll"
+          "command": "vscode-ha-config.reloadAll"
         },
         {
-          "command": "vscode-home-assistant.homeassistantReloadCoreConfig",
+          "command": "vscode-ha-config.homeassistantReloadCoreConfig",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.homeassistantRestart"
+          "command": "vscode-ha-config.homeassistantRestart"
         },
         {
-          "command": "vscode-home-assistant.scriptReload",
+          "command": "vscode-ha-config.scriptReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.groupReload",
+          "command": "vscode-ha-config.groupReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.automationReload",
+          "command": "vscode-ha-config.automationReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.conversationReload",
+          "command": "vscode-ha-config.conversationReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.sceneReload",
+          "command": "vscode-ha-config.sceneReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.themeReload",
+          "command": "vscode-ha-config.themeReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.inputReload",
+          "command": "vscode-ha-config.inputReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.homekitReload",
+          "command": "vscode-ha-config.homekitReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.filesizeReload",
+          "command": "vscode-ha-config.filesizeReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.minMaxReload",
+          "command": "vscode-ha-config.minMaxReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.genericThermostatReload",
+          "command": "vscode-ha-config.genericThermostatReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.genericCameraReload",
+          "command": "vscode-ha-config.genericCameraReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.pingReload",
+          "command": "vscode-ha-config.pingReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.trendReload",
+          "command": "vscode-ha-config.trendReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.historyStatsReload",
+          "command": "vscode-ha-config.historyStatsReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.universalReload",
+          "command": "vscode-ha-config.universalReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.statisticsReload",
+          "command": "vscode-ha-config.statisticsReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.filterReload",
+          "command": "vscode-ha-config.filterReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.restReload",
+          "command": "vscode-ha-config.restReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.commandLineReload",
+          "command": "vscode-ha-config.commandLineReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.bayesianReload",
+          "command": "vscode-ha-config.bayesianReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.telegramReload",
+          "command": "vscode-ha-config.telegramReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.smtpReload",
+          "command": "vscode-ha-config.smtpReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.mqttReload",
+          "command": "vscode-ha-config.mqttReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.rpioGpioReload",
+          "command": "vscode-ha-config.rpioGpioReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.knxReload",
+          "command": "vscode-ha-config.knxReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.templateReload",
+          "command": "vscode-ha-config.templateReload",
           "when": "false"
         },
         {
-          "command": "vscode-home-assistant.customTemplatesReload",
+          "command": "vscode-ha-config.customTemplatesReload",
           "when": "false"
         }
       ],
       "editor/context": [
         {
-          "command": "vscode-home-assistant.renderTemplate",
+          "command": "vscode-ha-config.renderTemplate",
           "group": "home-assistant",
           "when": "editorHasSelection"
         }
       ],
       "editor/title": [
         {
-          "command": "vscode-home-assistant.reloadAll",
+          "command": "vscode-ha-config.reloadAll",
           "title": "Home Assistant: Quick reload all",
           "group": "navigation@1",
           "when": "editorLangId == home-assistant"
         },
         {
-          "command": "vscode-home-assistant.showReloadIntegrations",
+          "command": "vscode-ha-config.showReloadIntegrations",
           "title": "Home Assistant: Reload specific integration",
           "group": "navigation@2",
           "when": "editorLangId == home-assistant"
         },
         {
-          "command": "vscode-home-assistant.homeassistantRestart",
+          "command": "vscode-ha-config.homeassistantRestart",
           "title": "Home Assistant: Restart Home Assistant",
           "group": "navigation@3",
           "when": "editorLangId == home-assistant"
@@ -589,119 +589,119 @@
       ],
       "home-assistant.reload": [
         {
-          "command": "vscode-home-assistant.automationReload",
+          "command": "vscode-ha-config.automationReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.bayesianReload",
+          "command": "vscode-ha-config.bayesianReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.commandLineReload",
+          "command": "vscode-ha-config.commandLineReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.conversationReload",
+          "command": "vscode-ha-config.conversationReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.customTemplatesReload",
+          "command": "vscode-ha-config.customTemplatesReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.filesizeReload",
+          "command": "vscode-ha-config.filesizeReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.filterReload",
+          "command": "vscode-ha-config.filterReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.genericCameraReload",
+          "command": "vscode-ha-config.genericCameraReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.genericThermostatReload",
+          "command": "vscode-ha-config.genericThermostatReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.groupReload",
+          "command": "vscode-ha-config.groupReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.historyStatsReload",
+          "command": "vscode-ha-config.historyStatsReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.homekitReload",
+          "command": "vscode-ha-config.homekitReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.homeassistantReloadCoreConfig",
+          "command": "vscode-ha-config.homeassistantReloadCoreConfig",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.inputReload",
+          "command": "vscode-ha-config.inputReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.knxReload",
+          "command": "vscode-ha-config.knxReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.minMaxReload",
+          "command": "vscode-ha-config.minMaxReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.mqttReload",
+          "command": "vscode-ha-config.mqttReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.pingReload",
+          "command": "vscode-ha-config.pingReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.restReload",
+          "command": "vscode-ha-config.restReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.rpioGpioReload",
+          "command": "vscode-ha-config.rpioGpioReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.sceneReload",
+          "command": "vscode-ha-config.sceneReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.scriptReload",
+          "command": "vscode-ha-config.scriptReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.smtpReload",
+          "command": "vscode-ha-config.smtpReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.statisticsReload",
+          "command": "vscode-ha-config.statisticsReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.telegramReload",
+          "command": "vscode-ha-config.telegramReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.templateReload",
+          "command": "vscode-ha-config.templateReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.themeReload",
+          "command": "vscode-ha-config.themeReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.trendReload",
+          "command": "vscode-ha-config.trendReload",
           "group": "2_components"
         },
         {
-          "command": "vscode-home-assistant.universalReload",
+          "command": "vscode-ha-config.universalReload",
           "group": "2_components"
         }
       ]
@@ -736,13 +736,14 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "24.19.2",
     "@types/request": "2.48.13",
-    "@types/vscode": "^1.146.0",
+    "@types/vscode": "~1.101.0",
     "@types/ws": "8.18.2",
     "@typescript-eslint/eslint-plugin": "^8.71.1",
     "@typescript-eslint/parser": "^8.72.2",
     "@typescript/native": "npm:typescript@^7.0.2",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.1.1",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "glob": "^14.0.6",

@@ -1,23 +1,26 @@
 name: VS Code Extension
 
-# Push runs only for the long-lived branches; feature branches are tested once,
-# through their pull request, instead of once for the push and again for the PR.
+# Push runs only for dev; feature branches are tested once, through their pull request,
+# instead of once for the push and again for the PR. Publishing a GitHub release builds,
+# tests and then publishes that version to the VS Code Marketplace.
 on:
   push:
-    branches: [dev, master]
+    branches: [dev]
     paths-ignore: ["**.md"]
   # No path filter here: the "Extension result" job must report on every PR so it can be a
   # required check. The changes job below skips the build for docs-only PRs instead.
   pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
 
-# A new push to a PR cancels that PR's run still in progress. Other runs (dev/master pushes,
+# A new push to a PR cancels that PR's run still in progress. Other runs (dev pushes, releases,
 # manual runs) each get their own group, so a queued run is never replaced by a newer one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Publishing uses VSCE_TOKEN / OPEN_VSX_TOKEN; GITHUB_TOKEN only needs to read the repo
+# GITHUB_TOKEN only needs to read the repo; the publish job adds what it needs
 permissions:
   contents: read
 
@@ -122,12 +125,20 @@ jobs:
             esac
           done
 
+  # Runs when a GitHub release is published (normally the Release Drafter draft), after the
+  # build and tests pass. The version comes from the release tag, so package.json's version
+  # is not bumped by hand. Pre-releases are not published.
   publish:
     name: Publish Extension
-    needs: ci
-    if: success() && github.ref == 'refs/heads/master'
+    needs: result
+    if: github.event_name == 'release' && !github.event.release.prerelease
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      # Attach the .vsix to the release
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
 
     steps:
       - name: ⤵️ Check out code from GitHub
@@ -138,12 +149,21 @@ jobs:
         with:
           node-version: "24"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            src/language-service/package-lock.json
+
+      - name: 🏷 Set version from the release tag
+        run: |
+          version="${TAG#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag must look like v1.2.3, got '$TAG'"
+            exit 1
+          fi
+          npm version "$version" --no-git-tag-version --allow-same-version
 
       - name: 🏗 Install NodeJS packages
         run: npm ci
-
-      - name: 🚀 Run Linter
-        run: npm run lint
 
       - name: 🚀 Build Schema
         run: npm run schema
@@ -151,17 +171,15 @@ jobs:
       - name: 🚀 Run Compile
         run: npm run compile
 
-      - name: 🚀 VSCode Marketplace Publish
-        run: |
-          npm install -g @vscode/vsce
-          vsce publish -p $VSCE_TOKEN
-          vsce package -o vscode-ha-config.vsix
-        env:
-          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+      - name: 📦 Package
+        run: npx vsce package -o vscode-ha-config.vsix
 
-      - name: 🚀 Open VSX Publish
-        uses: HaaLeo/publish-vscode-extension@1b8df468b849f76a143b8c18bf0ffa2075398d12 # v2.1.0
-        with:
-          pat: ${{ secrets.OPEN_VSX_TOKEN }}
-          extensionFile: vscode-ha-config.vsix
-          registryUrl: https://open-vsx.org
+      - name: 🚀 VS Code Marketplace Publish
+        run: npx vsce publish --packagePath vscode-ha-config.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+
+      - name: 📎 Attach the .vsix to the release
+        run: gh release upload "$TAG" vscode-ha-config.vsix --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
