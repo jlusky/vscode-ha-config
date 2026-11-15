@@ -745,7 +745,7 @@
     "@vscode/test-electron": "^3.1.0",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
-    "glob": "^13.0.6",
+    "glob": "^14.0.6",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "mocha": "^12.0.3",
@@ -776,8 +776,9 @@
   },
   "overrides": {
     "@vscode/test-cli": {
-      "glob": "^13.0.6"
+      "diff": "^8.0.4"
     },
+    "glob": "$glob",
     "minimatch": "^11.0.1",
     "serialize-javascript": "^7.1.3"
   }
