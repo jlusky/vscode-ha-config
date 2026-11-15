@@ -762,7 +762,7 @@
     "axios": "^1.21.1",
     "bufferutil": "^4.2.0",
     "home-assistant-js-websocket": "^9.7.1",
-    "utf-8-validate": "^6.0.5",
+    "utf-8-validate": "^6.0.6",
     "uuid": "^14.0.3",
     "vscode-json-languageservice": "^5.7.2",
     "vscode-languageclient": "^11.0.0",
