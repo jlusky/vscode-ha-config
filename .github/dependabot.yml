@@ -8,7 +8,9 @@ updates:
     open-pull-requests-limit: 10
     target-branch: dev
     ignore:
-      # typescript-eslint 8.x peer range is TypeScript <6.1.0; tsconfig relies on TS 6 deprecation opt-outs
+      # "typescript" is an alias for @typescript/typescript6, the TS 6 API that
+      # typescript-eslint and ts-node load; TS 7 has no JS API. tsc itself is TS 7,
+      # installed as "@typescript/native". Never let Dependabot replace the alias with typescript 7.
       - dependency-name: typescript
         versions: [">=6.1.0"]
       # Stay on Node 24.x type definitions; ignore @types/node 25+
@@ -22,7 +24,7 @@ updates:
     open-pull-requests-limit: 10
     target-branch: dev
     ignore:
-      # Keep in sync with the root TypeScript version, which builds this package
+      # Same TS 6 API alias as the root (see above)
       - dependency-name: typescript
         versions: [">=6.1.0"]
       # Keep in sync with the root @types/node version (Node 24.x)
