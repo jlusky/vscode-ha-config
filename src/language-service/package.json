@@ -42,8 +42,7 @@
     "ts-loader": "^9.2.8",
     "ts-node": "10.9.2",
     "typescript": "6.0.3",
-    "typescript-json-schema": "0.68.0",
-    "vscode-test": "^1.4.0"
+    "typescript-json-schema": "0.68.0"
   },
   "dependencies": {
     "@types/uuid": "^11.0.0",
@@ -55,5 +54,8 @@
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-uri": "^3.0.8",
     "yaml-language-server": "1.25.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
   }
 }

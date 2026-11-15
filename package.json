@@ -773,5 +773,12 @@
     "ws": "8.22.2",
     "yaml": "2.9.1",
     "yaml-language-server": "1.25.0"
+  },
+  "overrides": {
+    "@vscode/test-cli": {
+      "glob": "^13.0.6"
+    },
+    "minimatch": "^11.0.1",
+    "serialize-javascript": "^7.1.3"
   }
 }
