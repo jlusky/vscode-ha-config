@@ -9,8 +9,8 @@
           "runtimeExecutable": "${execPath}",
           "args": ["--extensionDevelopmentPath=${workspaceRoot}" ],
           "sourceMaps": true,
-          "outFiles": [ "${workspaceRoot}/out/**/*.js" ],
-          "preLaunchTask": "npm: watch"
+          "outFiles": [ "${workspaceRoot}/dist/**/*.js" ],
+          "preLaunchTask": "npm: bundle"
       },
       {
           "name": "Extension Tests",
@@ -24,8 +24,8 @@
             "--disable-extensions"
           ],
           "sourceMaps": true,
-          "outFiles": [ "${workspaceRoot}/out/test/**/*.js" ],
-          "preLaunchTask": "npm: compile"
+          "outFiles": [ "${workspaceRoot}/out/test/**/*.js", "${workspaceRoot}/dist/**/*.js" ],
+          "preLaunchTask": "npm: test-prep"
       },
       {
         "type": "node",
@@ -33,7 +33,7 @@
         "name": "Attach to Server",
         "port": 6003,
         "restart": true,
-        "outFiles": ["${workspaceRoot}/server/out/**/*.js"]
+        "outFiles": ["${workspaceRoot}/dist/**/*.js"]
       },
   ],
   "compounds": [

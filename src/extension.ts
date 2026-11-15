@@ -56,12 +56,8 @@ export async function activate(
     console.log(error);
   }
 
-  const serverModule = path.join(
-    context.extensionPath,
-    "out",
-    "server",
-    "server.js",
-  );
+  // Bundled by esbuild.mjs alongside dist/extension.js
+  const serverModule = path.join(context.extensionPath, "dist", "server.js");
 
   const debugOptions = { execArgv: ["--nolazy", "--inspect=6003"] };
 

@@ -1,23 +1,12 @@
-.vscode/**
-.vscode-test/**
-out/test/**
-src/**
-.gitignore
-**/tsconfig.json
-**/tslint.json
-**/*.map
-**/*.ts
-.claude/**
-.github/**
-.husky/**
-test-workspace/**
-test-ha-detection/**
-test-non-ha-detection/**
-eslint.config.mjs
-.prettierrc*
-.lintstagedrc*
-.coderabbit.yaml
-.gitattributes
-.vscode-test.*
-.prettierignore
-.nvmrc
+# The extension ships as the esbuild bundles in dist/ (see esbuild.mjs), so
+# sources, tsc output and node_modules stay out of the package.
+**
+!dist/**
+dist/**/*.map
+!package.json
+!README.md
+!LICENSE.md
+!CHANGELOG.md
+!assets/**/*.png
+!assets/**/*.gif
+!syntaxes/**
