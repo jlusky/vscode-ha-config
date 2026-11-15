@@ -201,7 +201,7 @@ export class EntityIdCompletionContribution implements JSONWorkerContribution {
       }
 
       return String(value);
-    } catch (error) {
+    } catch {
       return "[error converting value]";
     }
   }

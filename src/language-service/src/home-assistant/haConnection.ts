@@ -1092,7 +1092,7 @@ export class HaConnection implements IHaConnection {
       }
 
       return String(value);
-    } catch (error) {
+    } catch {
       return "[error converting value]";
     }
   }
@@ -1395,7 +1395,7 @@ export class HaConnection implements IHaConnection {
       if (error.response) {
         // The request was made and the server responded with a status code outside of 2xx range
         console.error(`Response status: ${error.response.status}`);
-        console.error(`Response data:`, error.response.data);
+        console.error("Response data:", error.response.data);
         
         // Return the error data to allow the caller to handle it
         return error.response.data;
