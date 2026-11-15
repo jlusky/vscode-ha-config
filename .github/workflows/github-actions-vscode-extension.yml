@@ -137,6 +137,9 @@ jobs:
     permissions:
       # Attach the .vsix to the release
       contents: write
+      # Marketplace Trusted Publishing: vsce exchanges GitHub's OIDC token for a
+      # short-lived Marketplace credential, so there is no publishing secret
+      id-token: write
     env:
       TAG: ${{ github.event.release.tag_name }}
 
@@ -155,12 +158,12 @@ jobs:
 
       - name: 🏷 Set version from the release tag
         run: |
-          version="${TAG#v}"
-          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          # Only vX.Y.Z: "1.2.3" and "v1.2.3" would publish the same version from two releases
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Release tag must look like v1.2.3, got '$TAG'"
             exit 1
           fi
-          npm version "$version" --no-git-tag-version --allow-same-version
+          npm version "${TAG#v}" --no-git-tag-version --allow-same-version
 
       - name: 🏗 Install NodeJS packages
         run: npm ci
@@ -175,9 +178,9 @@ jobs:
         run: npx vsce package -o vscode-ha-config.vsix
 
       - name: 🚀 VS Code Marketplace Publish
-        run: npx vsce publish --packagePath vscode-ha-config.vsix
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+        # A rerun after a failed release upload must not fail on the already-published version
+        # Needs a Trusted Publishing policy for this repository and workflow on the publisher
+        run: npx vsce publish --oidc --packagePath vscode-ha-config.vsix --skip-duplicate
 
       - name: 📎 Attach the .vsix to the release
         run: gh release upload "$TAG" vscode-ha-config.vsix --clobber
