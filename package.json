@@ -733,10 +733,12 @@
     "test:old": "npm run test-prep && node ./out/test/runTest.js",
     "watch": "tsc -watch -p ./",
     "prepare": "husky",
-    "vscode:prepublish": "npm run schema:quick && node esbuild.mjs --production"
+    "vscode:prepublish": "npm run schema:quick && node esbuild.mjs --production",
+    "icon": "node scripts/render-icon.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@resvg/resvg-js": "^2.6.2",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.19.2",

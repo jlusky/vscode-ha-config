@@ -5,3 +5,4 @@ node_modules
 src/language-service/dist
 src/language-service/src/schemas/json/*.json
 /dist
+/icons
