@@ -7,6 +7,13 @@ updates:
       time: "04:00"
     open-pull-requests-limit: 10
     target-branch: dev
+    groups:
+      # The typescript-eslint packages are released together and peer-depend on
+      # matching versions, so a bump of one alone fails npm ci with ERESOLVE.
+      typescript-eslint:
+        patterns:
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
     ignore:
       # "typescript" is an alias for @typescript/typescript6, the TS 6 API that
       # typescript-eslint and ts-node load; TS 7 has no JS API. tsc itself is TS 7,
