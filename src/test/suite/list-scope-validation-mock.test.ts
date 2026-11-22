@@ -216,4 +216,30 @@ suite("List Scope Validation Mock Test", () => {
 
     assert.deepStrictEqual(withCode(diagnostics, "unknown-area"), []);
   });
+
+  test("a document marker with a comment after it also ends the list", async () => {
+    const diagnostics = await diagnose(`area_id:
+- living_room
+--- # next document
+- light.turn_on
+`);
+
+    assert.deepStrictEqual(withCode(diagnostics, "unknown-area"), []);
+  });
+
+  test("a key with an anchor still owns the list below it", async () => {
+    const diagnostics = await diagnose(`script:
+  test:
+    sequence:
+      - action: light.turn_on
+        target:
+          entity_id: &targets
+            - light.kitchen
+            - light.missing_one
+`);
+
+    assert.deepStrictEqual(withCode(diagnostics, "unknown-entity"), [
+      "Entity 'light.missing_one' does not exist in your Home Assistant instance",
+    ]);
+  });
 });

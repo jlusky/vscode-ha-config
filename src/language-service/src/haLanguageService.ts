@@ -203,8 +203,8 @@ export class HomeAssistantLanguageService {
         continue;
       }
 
-      // A document separator ends the search
-      if (trimmedLine === "---" || trimmedLine === "...") {
+      // A document marker ends the search, even with a comment or content after it
+      if (/^(?:---|\.\.\.)(?:\s|$)/.test(trimmedLine)) {
         return false;
       }
 
@@ -216,9 +216,10 @@ export class HomeAssistantLanguageService {
         continue;
       }
 
-      // `key:`, `- key:` or `"key":`, optionally followed by a comment
+      // `key:`, `- key:` or `"key":`, optionally followed by an anchor or tag
+      // (`key: &targets`) and a comment
       const keyMatch = trimmedLine.match(
-        /^(?:-\s+)?["']?([\w-]+)["']?\s*:\s*(?:#.*)?$/,
+        /^(?:-\s+)?["']?([\w-]+)["']?\s*:(?:\s+[&!][^\s#]*)*\s*(?:#.*)?$/,
       );
       return keyMatch !== null && propertyNames.includes(keyMatch[1]);
     }
