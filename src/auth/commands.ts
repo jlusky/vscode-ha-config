@@ -45,16 +45,8 @@ export async function manageAuth(context: vscode.ExtensionContext): Promise<void
 }
 
 async function setToken(context: vscode.ExtensionContext): Promise<void> {
-  // First, check if we need to set the instance URL
-  // Try to get URL from SecretStorage first
-  let currentUrl = await AuthManager.getUrl(context);
-  
-  // If not in SecretStorage, check settings and environment
-  if (!currentUrl) {
-    const config = vscode.workspace.getConfiguration("vscode-ha-config");
-    currentUrl = config.get<string>("hostUrl") || process.env.HASS_SERVER || 
-      (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core" : "");
-  }
+  // The URL currently in use, from any source
+  const currentUrl = await AuthManager.getUrl(context);
   
   // Always ask for the instance URL for verification
   const instanceUrl = await vscode.window.showInputBox({
@@ -125,6 +117,17 @@ async function setToken(context: vscode.ExtensionContext): Promise<void> {
   } else {
     vscode.window.showWarningMessage("No token was entered.");
   }
+
+  // A token or URL in the workspace settings takes priority over the stored ones
+  const overridden = [
+    AuthManager.getWorkspaceSetting("url") ? "instance URL" : undefined,
+    AuthManager.getWorkspaceSetting("token") ? "token" : undefined,
+  ].filter(Boolean);
+  if (overridden.length > 0) {
+    vscode.window.showWarningMessage(
+      `This workspace's settings also set the Home Assistant ${overridden.join(" and ")}, which take priority over the stored ones in this workspace.`,
+    );
+  }
 }
 
 async function clearToken(context: vscode.ExtensionContext): Promise<void> {
@@ -145,21 +148,23 @@ async function clearToken(context: vscode.ExtensionContext): Promise<void> {
 }
 
 async function viewAuthDetails(context: vscode.ExtensionContext): Promise<void> {
-  const token = await AuthManager.getToken(context);
-  const url = await AuthManager.getUrl(context);
-  
+  const resolvedToken = await AuthManager.resolve(context, "token");
+  const resolvedUrl = await AuthManager.resolve(context, "url");
+  const token = resolvedToken?.value;
+  const url = resolvedUrl?.value;
+
   if (token || url) {
     let message = "Current Home Assistant Authentication Details:\n";
     if (url) {
-      message += `\nHome Assistant Instance URL: ${url}`;
+      message += `\nHome Assistant Instance URL: ${url} (from ${resolvedUrl?.source})`;
     } else {
       message += "\nHome Assistant Instance URL: Not set";
     }
     if (token) {
-      const obscuredToken = token.length <= 10 
-        ? "***" 
+      const obscuredToken = token.length <= 10
+        ? "***"
         : `${token.substring(0, 5)}...${token.substring(token.length - 5)}`;
-      message += `\nToken: ${obscuredToken}`;
+      message += `\nToken: ${obscuredToken} (from ${resolvedToken?.source})`;
     } else {
       message += "\nToken: Not set";
     }

@@ -88,38 +88,44 @@ export class AuthMiddleware {
   }
   
   /**
+   * Move a token or URL from the user settings.json to SecretStorage. Workspace settings are
+   * never migrated: they belong to that workspace.
+   */
+  private async migrateUserSettings(): Promise<void> {
+    try {
+      if (await AuthManager.migrateTokenFromSettings(this.context)) {
+        AuthMiddleware.log("Migrated the token from user settings to SecretStorage");
+      }
+      if (await AuthManager.migrateUrlFromSettings(this.context)) {
+        AuthMiddleware.log("Migrated the URL from user settings to SecretStorage");
+      }
+    } catch (error) {
+      AuthMiddleware.log(`Failed to migrate user settings to SecretStorage: ${error.message}`);
+    }
+  }
+
+  /**
    * Send initial configuration with token and URL to ensure it's available immediately
    */
   private async sendInitialConfiguration(connection: MessageConnection): Promise<void> {
     try {
       AuthMiddleware.log("Sending initial configuration with token and URL");
       
-      // Get token from multiple sources
-      const secretToken = await AuthManager.getToken(this.context);
-      const envToken = process.env.HASS_TOKEN || process.env.SUPERVISOR_TOKEN;
-      
-      const config = vscode.workspace.getConfiguration("vscode-ha-config");
-      const settingsToken = config.get<string>("longLivedAccessToken");
-      
-      const token = secretToken || envToken || settingsToken;
-      
+      const token = await AuthManager.getToken(this.context);
+
       if (!token) {
         AuthMiddleware.log("No token available for initial configuration");
         return;
       }
-      
-      // Get URL from SecretStorage first, then fallback to other sources
-      const secretUrl = await AuthManager.getUrl(this.context);
-      const settingsUrl = config.get<string>("hostUrl");
-      const envUrl = process.env.HASS_SERVER || 
-        (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core" : "");
-      
-      const hostUrl = secretUrl || settingsUrl || envUrl;
-      
+
+      const hostUrl = await AuthManager.getUrl(this.context);
+
       if (!hostUrl) {
         AuthMiddleware.log("No server URL available for initial configuration");
         return;
       }
+
+      const config = vscode.workspace.getConfiguration("vscode-ha-config");
         
       // Create configuration object
       const settings = {
@@ -133,7 +139,7 @@ export class AuthMiddleware {
       };
       
       // Send configuration notification
-      AuthMiddleware.log(`Sending initial configuration with token (length: ${token.length}, first 5 chars: ${token.substring(0, 5)}...) and URL (${hostUrl})`);
+      AuthMiddleware.log(`Sending initial configuration with token (length: ${token.length}) and URL (${hostUrl})`);
       
       // Create notification params
       const params: DidChangeConfigurationParams = {
@@ -161,7 +167,7 @@ export class AuthMiddleware {
   }
   
   /**
-   * Handle configuration request and inject token and URL from SecretStorage
+   * Handle configuration request and inject the token and URL from AuthManager
    */
   private async handleConfigurationRequest(
     originalSendRequest: (type: any, ...params: any[]) => Promise<any>,
@@ -174,79 +180,26 @@ export class AuthMiddleware {
     if (Array.isArray(result)) {
       for (const item of result) {
         if (item && typeof item === "object" && "vscode-ha-config" in item) {
-          const secretToken = await AuthManager.getToken(this.context);
-          const envToken = process.env.HASS_TOKEN || process.env.SUPERVISOR_TOKEN;
-          const config = vscode.workspace.getConfiguration("vscode-ha-config");
-          const settingsToken = config.get<string>("longLivedAccessToken");
-          const token = secretToken || envToken || settingsToken;
-
-          const secretUrl = await AuthManager.getUrl(this.context);
-          const settingsUrl = config.get<string>("hostUrl");
-          const envUrl = process.env.HASS_SERVER ||
-            (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core" : null);
-          const url = secretUrl || settingsUrl || envUrl;
+          const token = await AuthManager.getToken(this.context);
+          const url = await AuthManager.getUrl(this.context);
 
           if (!item["vscode-ha-config"]) {
             item["vscode-ha-config"] = {};
           }
 
           if (token) {
-            AuthMiddleware.log(`Injecting token (length: ${token.length}, first 5 chars: ${token.substring(0, 5)}...) into configuration`);
+            AuthMiddleware.log(`Injecting token (length: ${token.length}) into configuration`);
             item["vscode-ha-config"].longLivedAccessToken = token;
-
-            AuthMiddleware.log("Token injection verification: " +
-              (item["vscode-ha-config"].longLivedAccessToken === token ?
-                "SUCCESS" : "FAILED"));
-
-            const obscuredToken = token.length <= 10
-              ? "***"
-              : `${token.substring(0, 5)}...${token.substring(token.length - 5)}`;
-            AuthMiddleware.log(`Using token (obscured): ${obscuredToken}`);
-
-            // Only migrate from settings, not from environment variables
-            if (!secretToken && settingsToken) {
-              AuthMiddleware.log("Token was found in settings but not in SecretStorage, attempting migration");
-              try {
-                await AuthManager.storeToken(this.context, token);
-                await config.update("longLivedAccessToken", undefined, vscode.ConfigurationTarget.Global);
-                AuthMiddleware.log("Successfully migrated token from settings.json to SecretStorage");
-              } catch (error) {
-                AuthMiddleware.log(`Failed to migrate token to SecretStorage: ${error.message}`);
-              }
-            } else if (!secretToken && envToken) {
-              AuthMiddleware.log("Using environment token");
-            }
           } else {
-            AuthMiddleware.log("WARNING: No token found in SecretStorage, environment, or settings for configuration item");
+            AuthMiddleware.log("WARNING: No token found in workspace settings, SecretStorage, environment or user settings for configuration item");
           }
 
           if (url) {
             AuthMiddleware.log(`Injecting URL (${url}) into configuration`);
             item["vscode-ha-config"].hostUrl = url;
-
-            // Migrate URL if found in settings but not SecretStorage (mirroring DidChangeConfigurationNotification)
-            if (!secretUrl && settingsUrl) {
-              AuthMiddleware.log("URL was found in settings (request) but not in SecretStorage, attempting migration");
-              try {
-                await AuthManager.storeUrl(this.context, url);
-                await config.update("hostUrl", undefined, vscode.ConfigurationTarget.Global);
-                AuthMiddleware.log("Successfully migrated URL from settings.json (request) to SecretStorage");
-              } catch (error) {
-                AuthMiddleware.log(`Failed to migrate URL to SecretStorage (request): ${error.message}`);
-              }
-            }
           }
 
-          // Fallback URL injection if still not set (original logic)
-          const currentSettingsUrlFallback = config.get<string>("hostUrl"); // Re-fetch as it might have been cleared by migration
-          const currentEnvUrlFallback = process.env.HASS_SERVER ||
-              (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core" : "");
-          const fallbackUrl = currentSettingsUrlFallback || currentEnvUrlFallback;
-
-          if (fallbackUrl && !item["vscode-ha-config"].hostUrl) {
-            item["vscode-ha-config"].hostUrl = fallbackUrl;
-            AuthMiddleware.log(`Also injected fallback URL: ${fallbackUrl}`);
-          }
+          await this.migrateUserSettings();
         }
       }
     }
@@ -254,7 +207,7 @@ export class AuthMiddleware {
   }
   
   /**
-   * Handle configuration notification and inject token and URL from SecretStorage
+   * Handle configuration notification and inject the token and URL from AuthManager
    */
   private async handleDidChangeConfigurationNotification(
     originalSendNotification: (type: any, ...params: any[]) => Promise<void>,
@@ -272,62 +225,22 @@ export class AuthMiddleware {
           AuthMiddleware.log("Created missing vscode-ha-config settings object in notification");
         }
         
-        // Try to get token from multiple sources
-        const secretToken = await AuthManager.getToken(this.context);
-        const envToken = process.env.HASS_TOKEN || process.env.SUPERVISOR_TOKEN;
-        
-        const config = vscode.workspace.getConfiguration("vscode-ha-config");
-        const settingsToken = config.get<string>("longLivedAccessToken");
-        
-        const token = secretToken || envToken || settingsToken;
-        
-        // Try to get URL from SecretStorage first, then fallback to settings
-        const secretUrl = await AuthManager.getUrl(this.context);
-        const settingsUrl = config.get<string>("hostUrl");
-        const envUrl = process.env.HASS_SERVER || 
-          (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core" : undefined);
-        
-        const url = secretUrl || settingsUrl || envUrl;
-        
-        // Inject token if available
+        const token = await AuthManager.getToken(this.context);
+        const url = await AuthManager.getUrl(this.context);
+
         if (token) {
           AuthMiddleware.log(`Injecting token (length: ${token.length}) into notification`);
           notification.settings["vscode-ha-config"].longLivedAccessToken = token;
-          
-          // Inject URL if available
-          if (url) {
-            AuthMiddleware.log(`Injecting URL (${url}) into notification`);
-            notification.settings["vscode-ha-config"].hostUrl = url;
-            
-            // If URL was found in settings but not in SecretStorage, migrate it
-            if (!secretUrl && settingsUrl) {
-              AuthMiddleware.log("URL was found in settings but not in SecretStorage, attempting migration");
-              try {
-                await AuthManager.storeUrl(this.context, url);
-                await config.update("hostUrl", undefined, vscode.ConfigurationTarget.Global);
-                AuthMiddleware.log("Successfully migrated URL from settings.json to SecretStorage");
-              } catch (error) {
-                AuthMiddleware.log(`Failed to migrate URL to SecretStorage: ${error.message}`);
-              }
-            }
-          }
-          
-          // Only migrate from settings, not from environment variables
-          if (!secretToken && settingsToken) {
-            AuthMiddleware.log("Token was found in settings but not in SecretStorage, attempting migration");
-            try {
-              await AuthManager.storeToken(this.context, token);
-              await config.update("longLivedAccessToken", undefined, vscode.ConfigurationTarget.Global);
-              AuthMiddleware.log("Successfully migrated token from settings.json to SecretStorage");
-            } catch (error) {
-              AuthMiddleware.log(`Failed to migrate token to SecretStorage: ${error.message}`);
-            }
-          } else if (!secretToken && envToken) {
-            AuthMiddleware.log("Using environment token (not migrated to SecretStorage)");
-          }
         } else {
-          AuthMiddleware.log("WARNING: No token found in SecretStorage, environment, or settings for notification");
+          AuthMiddleware.log("WARNING: No token found in workspace settings, SecretStorage, environment or user settings for notification");
         }
+
+        if (url) {
+          AuthMiddleware.log(`Injecting URL (${url}) into notification`);
+          notification.settings["vscode-ha-config"].hostUrl = url;
+        }
+
+        await this.migrateUserSettings();
       }
     }
     

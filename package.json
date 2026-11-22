@@ -48,6 +48,16 @@
             "type": "boolean",
             "description": "Enable insecure transport. Check this if you want to connect over an insecure HTTPS transport with a invalid certificate!"
           },
+          "vscode-ha-config.hostUrl": {
+            "type": "string",
+            "scope": "resource",
+            "markdownDescription": "URL of the Home Assistant instance for **this workspace**, for example `http://homeassistant.local:8123`. Set it in the workspace settings to point each workspace at its own instance: it takes priority over the URL stored with **Manage Home Assistant Authentication**. A value in your user settings is moved to secure storage instead."
+          },
+          "vscode-ha-config.longLivedAccessToken": {
+            "type": "string",
+            "scope": "resource",
+            "markdownDescription": "Long-lived access token for **this workspace**. Set it in the workspace settings to use a different instance per workspace: it takes priority over the token stored with **Manage Home Assistant Authentication**. The workspace `settings.json` is plain text, so keep it out of version control. A value in your user settings is moved to secure storage instead."
+          },
           "vscode-ha-config.disableAutomaticFileAssociation": {
             "type": "boolean",
             "default": false,
