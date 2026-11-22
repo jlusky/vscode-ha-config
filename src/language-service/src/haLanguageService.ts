@@ -36,6 +36,7 @@ import { DefinitionProvider } from "./definition/definition";
 import { HomeAssistantConfiguration } from "./haConfig/haConfig";
 import { Includetype } from "./haConfig/dto";
 import { IConfigurationService } from "./configuration";
+import { applyIgnoreDirectives } from "./utils/ignoreDirectives";
 
 export class HomeAssistantLanguageService {
   private templateCache = new Map<string, { value: string; timestamp: number }>();
@@ -322,7 +323,8 @@ export class HomeAssistantLanguageService {
     const actionValidationDiagnostics = await this.validateActionIds(document);
     diagnostics.push(...actionValidationDiagnostics);
 
-    return diagnostics;
+    // Drop diagnostics silenced by "# homeassistant:ignore" and similar comments
+    return applyIgnoreDirectives(document, diagnostics);
   };
 
   private validateEntityIds = async (
