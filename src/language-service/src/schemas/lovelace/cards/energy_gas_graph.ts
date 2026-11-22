@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Gas graph Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-gas-graph-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The gas consumption graph card shows the amount of gas consumed per source.
    * https://www.home-assistant.io/lovelace/energy/#gas-consumption-graph

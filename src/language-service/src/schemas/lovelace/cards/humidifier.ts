@@ -6,7 +6,7 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
 import { HumidifierEntity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 interface FeatureBase {
   type: string;
@@ -31,7 +31,7 @@ type Feature =
   | HumidifierModesFeature
   | HumidifierToggleFeature;
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Humidifier card lets you control and monitor humidifiers, dehumidifiers, and hygrostat devices.
    * https://www.home-assistant.io/lovelace/humidifier/

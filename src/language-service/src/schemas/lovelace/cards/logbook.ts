@@ -6,9 +6,9 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
 import { Entity, PositiveInteger } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Logbook card displays entries from the logbook for specific entities.
    * https://www.home-assistant.io/lovelace/logbook/

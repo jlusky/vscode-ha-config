@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Energy Date Picker Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-date-selection-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * This card will allow you to pick what date to show.
    * https://www.home-assistant.io/lovelace/energy/#energy-date-picker

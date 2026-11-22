@@ -7,9 +7,9 @@
  */
 
 import { WeatherEntity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Weather Forecast card displays the weather. Very useful to include on interfaces that people display on the wall.
    * https://www.home-assistant.io/lovelace/weather-forecast/

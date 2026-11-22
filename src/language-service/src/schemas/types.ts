@@ -1758,3 +1758,106 @@ export type SupportedFeatureWeather =
   | "weather.WeatherEntityFeature.FORECAST_DAILY"
   | "weather.WeatherEntityFeature.FORECAST_HOURLY"
   | "weather.WeatherEntityFeature.FORECAST_TWICE_DAILY";
+
+/**
+ * The integration and name of a trigger or condition an integration provides, for example
+ * climate.hvac_mode_changed or temperature.is_value.
+ * @TJS-pattern ^[a-z0-9_]+\.[a-z0-9_]+$
+ */
+export type IntegrationTriggerOrCondition = string;
+
+/**
+ * One entity ID or a list of them. Unlike Entities, a comma-separated string isn't accepted.
+ * @TJS-pattern ^(?!.+__)(?!_)[\da-z_]+(?<!_)\.(?!_)[\da-z_]+(?<!_)$
+ * @items.pattern ^(?!.+__)(?!_)[\da-z_]+(?<!_)\.(?!_)[\da-z_]+(?<!_)$
+ */
+type TargetEntities = Entity | Entity[];
+
+interface TargetIds {
+  /**
+   * The entity (or entities) to target. Unlike action targets, a comma-separated string isn't
+   * split here: use a list for several entities.
+   */
+  entity_id?: TargetEntities;
+
+  /**
+   * The device (or devices) to target.
+   */
+  device_id?: string | string[];
+
+  /**
+   * The area (or areas) to target.
+   */
+  area_id?: Area | Area[];
+
+  /**
+   * The floor (or floors) to target.
+   */
+  floor_id?: Floor | Floor[];
+
+  /**
+   * The label (or labels) to target.
+   */
+  label_id?: Label | Label[];
+}
+
+/**
+ * The entities, devices, areas, floors or labels an integration-provided trigger or condition applies to.
+ * An `exclude` block needs at least one non-empty entity_id, device_id, area_id, floor_id or
+ * label_id to exclude from: Home Assistant rejects a target with only `exclude`.
+ * Source: TARGET_FIELDS and exclude_requires_target in https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/config_validation.py
+ */
+export type Target =
+  | TargetIds
+  | ExcludeFromEntities
+  | ExcludeFromDevices
+  | ExcludeFromAreas
+  | ExcludeFromFloors
+  | ExcludeFromLabels;
+
+interface TargetWithExclude extends TargetIds {
+  /**
+   * Entities, devices, areas, floors or labels to leave out of the target.
+   */
+  exclude: TargetIds;
+}
+
+interface ExcludeFromEntities extends TargetWithExclude {
+  /**
+   * The entity (or entities) to target, and exclude from.
+   * @minItems 1
+   */
+  entity_id: TargetEntities;
+}
+
+interface ExcludeFromDevices extends TargetWithExclude {
+  /**
+   * The device (or devices) to target, and exclude from.
+   * @minItems 1
+   */
+  device_id: string | string[];
+}
+
+interface ExcludeFromAreas extends TargetWithExclude {
+  /**
+   * The area (or areas) to target, and exclude from.
+   * @minItems 1
+   */
+  area_id: Area | Area[];
+}
+
+interface ExcludeFromFloors extends TargetWithExclude {
+  /**
+   * The floor (or floors) to target, and exclude from.
+   * @minItems 1
+   */
+  floor_id: Floor | Floor[];
+}
+
+interface ExcludeFromLabels extends TargetWithExclude {
+  /**
+   * The label (or labels) to target, and exclude from.
+   * @minItems 1
+   */
+  label_id: Label | Label[];
+}

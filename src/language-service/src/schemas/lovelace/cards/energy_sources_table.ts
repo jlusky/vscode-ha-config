@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Energy sources table Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-sources-table-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The energy sources table card shows all your energy sources, and the corresponding amount of energy.
    * https://www.home-assistant.io/lovelace/energy/#energy-sources-table

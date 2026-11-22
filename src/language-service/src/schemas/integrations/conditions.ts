@@ -3,6 +3,7 @@
  * Source: https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/config_validation.py
  */
 import {
+  Data,
   DeviceTrackerEntities,
   DynamicTemplate,
   Entities,
@@ -11,10 +12,12 @@ import {
   InputDatetimeEntity,
   InputNumberEntity,
   Integer,
+  IntegrationTriggerOrCondition,
   NumberEntity,
   PersonEntities,
   SensorEntity,
   State,
+  Target,
   Template,
   Time,
   TimePeriod,
@@ -32,6 +35,7 @@ interface ConditionMetadata {
 }
 
 export type Condition =
+  | IntegrationCondition
   | AndCondition
   | AndShorthandCondition
   | DeviceCondition
@@ -49,6 +53,39 @@ export type Condition =
   | TimeCondition
   | TriggerCondition
   | ZoneCondition;
+
+/**
+ * A condition an integration provides, such as temperature.is_value.
+ * They select what to check with target, and take their settings from options.
+ * Source: https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/condition/models.py
+ */
+export interface IntegrationCondition extends ConditionMetadata {
+  /**
+   * Alias for the condition.
+   */
+  alias?: string;
+
+  /**
+   * Every individual condition can be disabled, without removing it.
+   * https://www.home-assistant.io/docs/scripts/conditions/#disabling-a-condition
+   */
+  enabled?: boolean | Template;
+
+  /**
+   * The integration and name of the condition, for example temperature.is_value.
+   */
+  condition: IntegrationTriggerOrCondition;
+
+  /**
+   * The entities, devices, areas, floors or labels the condition checks.
+   */
+  target?: Target;
+
+  /**
+   * Settings for this condition. Which options exist depends on the condition.
+   */
+  options?: Data;
+}
 
 export interface ShorthandCondition extends ConditionMetadata {
   /**

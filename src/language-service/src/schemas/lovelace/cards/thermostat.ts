@@ -7,7 +7,7 @@
  */
 
 import { ClimateEntity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 interface FeatureBase {
   type: string;
@@ -50,7 +50,7 @@ type Feature =
   | ClimateSwingModesFeature
   | AuxHeatFeature;
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Thermostat card gives control of your climate entity, allowing you to change the temperature and mode of the entity.
    * https://www.home-assistant.io/lovelace/thermostat/
