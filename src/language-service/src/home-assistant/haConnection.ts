@@ -812,6 +812,9 @@ export class HaConnection implements IHaConnection {
               } else {
                 console.log(`${Math.abs(diff)} entities have been removed from Home Assistant (total: ${entityCount})`);
               }
+              // Entities appear or disappear when they're added, removed, enabled or
+              // disabled. Fetch the registry again so its disabled_by values are current.
+              this.hassEntityRegistry = undefined as any;
             }
             this.lastEntityCount = entityCount;
           }
@@ -852,6 +855,11 @@ export class HaConnection implements IHaConnection {
               repacked_entities[entry.entity_id] = entry;
             });
             return resolve(repacked_entities);
+          })
+          .catch((error) => {
+            // Let callers fall back, and try again on the next request
+            this.hassEntityRegistry = undefined as any;
+            reject(error);
           });
       },
     );

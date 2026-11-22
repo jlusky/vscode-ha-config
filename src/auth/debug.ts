@@ -192,6 +192,9 @@ export async function debugAuthSettings(context: vscode.ExtensionContext): Promi
   }
 }
 
+const API_REQUEST_TIMEOUT_MS = 15000;
+const CONFIG_REQUEST_TIMEOUT_MS = 5000;
+
 /**
  * Test connection to Home Assistant API
  * @param url The URL to connect to
@@ -228,8 +231,26 @@ export async function testHomeAssistantConnection(
         
         res.on("end", () => {
           if (res.statusCode === 200) {
+            let parsedData: any;
             try {
-              const parsedData = JSON.parse(data);
+              parsedData = JSON.parse(data);
+            } catch {
+              // A wrong URL or a proxy page can answer 200 with HTML
+              resolve({
+                success: false,
+                message: "The URL answered, but not with Home Assistant's API. Check the URL and any proxy in front of Home Assistant.",
+              });
+              return;
+            }
+            // Home Assistant's /api/ endpoint answers {"message": "API running."}
+            if (parsedData?.message !== "API running.") {
+              resolve({
+                success: false,
+                message: `Unexpected API response: ${parsedData?.message ?? "no message"}`,
+              });
+              return;
+            }
+            try {
               
               // Extract version information from the Home Assistant API response
               // The version can be in different locations based on the API
@@ -312,6 +333,17 @@ export async function testHomeAssistantConnection(
                   });
                 });
                 
+                // The version is optional: if /api/config doesn't answer, report the
+                // successful /api/ response rather than waiting forever
+                configReq.setTimeout(CONFIG_REQUEST_TIMEOUT_MS, () => {
+                  configReq.destroy();
+                  resolve({
+                    success: true,
+                    message: "API connection successful",
+                    data: { ...parsedData, version: version },
+                  });
+                });
+
                 configReq.end();
               } else {
                 // We already have the version, just return the data
@@ -325,8 +357,9 @@ export async function testHomeAssistantConnection(
                 });
               }
             } catch (e) {
-              console.log("Failed to parse JSON response:", e.message);
-              resolve({ success: true, message: "API connection successful, but response wasn't valid JSON" });
+              // The API answered: only the optional version lookup failed
+              console.log("Failed to look up the Home Assistant version:", e.message);
+              resolve({ success: true, message: "API connection successful", data: parsedData });
             }
           } else if (res.statusCode === 401) {
             resolve({ success: false, message: "Authentication failed (401 Unauthorized)" });
@@ -339,7 +372,15 @@ export async function testHomeAssistantConnection(
       req.on("error", (error) => {
         reject(error);
       });
-      
+
+      req.setTimeout(API_REQUEST_TIMEOUT_MS, () => {
+        const error: NodeJS.ErrnoException = new Error(
+          `No response after ${API_REQUEST_TIMEOUT_MS / 1000} seconds`,
+        );
+        error.code = "ETIMEDOUT";
+        req.destroy(error);
+      });
+
       req.end();
     } catch (error) {
       reject(error);
