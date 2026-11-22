@@ -5,9 +5,9 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/types.ts
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
-import { Card, Condition, ViewLayout } from "../types";
+import { Card, Condition, ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Conditional card displays another card based on entity states.
    * https://www.home-assistant.io/lovelace/conditional/

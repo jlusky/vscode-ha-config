@@ -20,6 +20,8 @@ import {
   SensorEntity,
   CalendarEntity,
   LegacySyntax,
+  IntegrationTriggerOrCondition,
+  Target,
 } from "../types";
 
 import { WebOSTvTrigger } from "./core/webostv";
@@ -27,6 +29,7 @@ import { KnxTelegramTrigger } from "./core/knx";
 
 export type Trigger =
   | CalendarTrigger
+  | IntegrationTrigger
   | ConversationTrigger
   | DeviceTrigger
   | EventTrigger
@@ -70,6 +73,57 @@ type EventType =
 
 type AllowedMethods = "POST" | "PUT" | "GET" | "HEAD";
 type PersistentNotificationUpdateType = "added" | "updated" | "removed";
+
+/**
+ * A trigger an integration provides, such as climate.hvac_mode_changed or calendar.event_started.
+ * They select what to watch with target, and take their settings from options.
+ * Source: https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/trigger/models.py
+ */
+interface IntegrationTrigger {
+  /**
+   * Alias for the trigger.
+   */
+  alias?: string;
+
+  /**
+   * Every individual trigger in an automation can be disabled, without removing it.
+   * https://www.home-assistant.io/docs/automation/trigger/#disabling-a-trigger
+   */
+  enabled?: boolean | Template;
+
+  /**
+   * An personal identifier for this trigger, that is passed into the trigger
+   * variables when the automation triggers using this trigger.
+   * https://www.home-assistant.io/docs/automation/trigger/#trigger-id
+   */
+  id?: string;
+
+  /**
+   * Note displayed in the Home Assistant automation editor.
+   */
+  note?: string;
+
+  /**
+   * The integration and name of the trigger, for example climate.hvac_mode_changed.
+   */
+  trigger: IntegrationTriggerOrCondition;
+
+  /**
+   * The entities, devices, areas, floors or labels the trigger watches.
+   */
+  target?: Target;
+
+  /**
+   * Settings for this trigger. Which options exist depends on the trigger.
+   */
+  options?: Data;
+
+  /**
+   * Define variables that will be available in the conditions and action sections.
+   * https://www.home-assistant.io/docs/automation/trigger#trigger-variables
+   */
+  variables?: Data;
+}
 
 interface CalendarTrigger {
   /**

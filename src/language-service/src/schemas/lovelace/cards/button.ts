@@ -7,9 +7,9 @@
  */
 import { Entity } from "../../types";
 import { Action } from "../actions";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Alarm Panel card allows you to Arm and Disarm your alarm control panel integrations.
    * https://www.home-assistant.io/lovelace/button/

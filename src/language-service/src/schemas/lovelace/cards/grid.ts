@@ -7,9 +7,9 @@
  */
 
 import { PositiveInteger } from "../../types";
-import { Card, ViewLayout } from "../types";
+import { Card, ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Grid card allows you to show multiple cards in a grid. It will first fill the columns, automatically adding new rows as needed.
    * https://www.home-assistant.io/lovelace/grid/

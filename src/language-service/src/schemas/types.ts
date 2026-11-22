@@ -1751,3 +1751,48 @@ export type SupportedFeatureWeather =
   | "weather.WeatherEntityFeature.FORECAST_DAILY"
   | "weather.WeatherEntityFeature.FORECAST_HOURLY"
   | "weather.WeatherEntityFeature.FORECAST_TWICE_DAILY";
+
+/**
+ * The integration and name of a trigger or condition an integration provides, for example
+ * climate.hvac_mode_changed or temperature.is_value.
+ * @TJS-pattern ^[a-z0-9_]+\.[a-z0-9_]+$
+ */
+export type IntegrationTriggerOrCondition = string;
+
+interface TargetIds {
+  /**
+   * The entity (or entities) to target.
+   */
+  entity_id?: Entities;
+
+  /**
+   * The device (or devices) to target.
+   */
+  device_id?: string | string[];
+
+  /**
+   * The area (or areas) to target.
+   */
+  area_id?: Area | Area[];
+
+  /**
+   * The floor (or floors) to target.
+   */
+  floor_id?: Floor | Floor[];
+
+  /**
+   * The label (or labels) to target.
+   */
+  label_id?: Label | Label[];
+}
+
+/**
+ * The entities, devices, areas, floors or labels an integration-provided trigger or condition applies to.
+ * Source: TARGET_FIELDS in https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/config_validation.py
+ */
+export interface Target extends TargetIds {
+  /**
+   * Entities, devices, areas, floors or labels to leave out of the target.
+   */
+  exclude?: TargetIds;
+}

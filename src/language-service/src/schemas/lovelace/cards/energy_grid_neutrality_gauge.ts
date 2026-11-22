@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Grid neutrality gauge Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-grid-neutrality-gauge-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The grid neutrality gauge card represents your energy dependency.
    * https://www.home-assistant.io/lovelace/energy/#grid-neutrality-gauge

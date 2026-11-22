@@ -7,11 +7,11 @@
  */
 
 import { Entity as EntityString, PositiveInteger } from "../../types";
-import { EntityConfig, ViewLayout } from "../types";
+import { EntityConfig, ViewLayout, CardOptions } from "../types";
 
 type Entity = EntityString | EntityConfig;
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The History Graph card allows you to display a graph for each of the entities listed.
    * https://www.home-assistant.io/lovelace/history-graph/

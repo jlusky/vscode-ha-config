@@ -4,8 +4,10 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/hui-area-card.ts
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/types.ts
  */
+import { CardOptions } from "../types";
 
-export interface Schema {
+
+export interface Schema extends CardOptions {
   /**
    * The Area card lets you control and monitor an individual area.
    * https://www.home-assistant.io/lovelace/area/

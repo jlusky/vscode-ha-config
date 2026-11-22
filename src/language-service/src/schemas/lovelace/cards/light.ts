@@ -7,9 +7,9 @@
  */
 import { Action } from "../actions";
 import { LightEntity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Light card allows you to change the brightness of the light.
    * https://www.home-assistant.io/lovelace/light/

@@ -8,11 +8,11 @@
 import { Entity as EntityString } from "../../types";
 import { HeaderFooter } from "../headers_footers";
 import { Row } from "../rows";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 type Entity = EntityString | Row;
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Entities card is the most common type of card. It groups items together into lists.
    * https://www.home-assistant.io/lovelace/entities/
