@@ -2696,7 +2696,25 @@ export class HomeAssistantLanguageService {
         lineOffsets[currentLine + 1] !== undefined
           ? lineOffsets[currentLine + 1] - 1
           : document.getText().length;
-      const thisLine = document.getText().substring(start, end);
+      // Drop a trailing comment ("- light.kitchen # Kitchen") so it doesn't hide the list
+      // item from the check below. A "#" without whitespace before it ("a#b") is kept.
+      const thisLine = document
+        .getText()
+        .substring(start, end)
+        .replace(/\s+#.*$/, "");
+
+      // Blank lines and full-line comments, such as "# === Ground floor ===" section
+      // headers, don't end a list: keep walking up to the key that owns it. The cursor's
+      // own line is different: when it's blank, the user is starting a new key (or is in
+      // a comment), not a list item, so no value completions apply.
+      const trimmedLine = thisLine.trim();
+      if (trimmedLine === "" || trimmedLine.startsWith("#")) {
+        if (currentLine === textDocumentPosition.line) {
+          return null;
+        }
+        currentLine -= 1;
+        continue;
+      }
 
       const isOtherItemInList = thisLine.match(
         /-\s*([-"\w]+)?(\.)?([-"\w]+?)?\s*$/,
