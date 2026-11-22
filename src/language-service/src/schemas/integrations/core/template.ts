@@ -3,6 +3,7 @@
  * Source: https://github.com/home-assistant/core/blob/dev/homeassistant/components/template/
  */
 import {
+  Data,
   DeviceClassesBinarySensor,
   DeviceClassesCover,
   DeviceClassesSensor,
@@ -135,10 +136,23 @@ export interface Item {
   action?: Action | Action[];
 
   /**
+   * Define actions to be executed when the trigger fires. Optional. Variables set by the action script are available when evaluating entity templates.
+   * This can be used to interact with anything via services, in particular services with response data. See action documentation.
+   * https://www.home-assistant.io/integrations/template/#action
+   */
+  actions?: Action | Action[] | IncludeList;
+
+  /**
    * Define conditions that have to be met after a trigger fires and before any actions are executed or sensor updates are performed (for trigger-based entities only). Optional. See condition documentation.
    * https://www.home-assistant.io/integrations/template/#condition
    */
   condition?: Condition | Condition[] | DynamicTemplate | IncludeList;
+
+  /**
+   * Define conditions that have to be met after a trigger fires and before any actions are executed or sensor updates are performed (for trigger-based entities only). Optional. See condition documentation.
+   * https://www.home-assistant.io/integrations/template/#condition
+   */
+  conditions?: Condition | Condition[] | DynamicTemplate | IncludeList;
 
   /**
    * Define an automation trigger to update the entities. Optional. If omitted will update based on referenced entities. See trigger documentation.
@@ -147,10 +161,34 @@ export interface Item {
   trigger?: Trigger | Trigger[] | IncludeList;
 
   /**
+   * Define an automation trigger to update the entities. Optional. If omitted will update based on referenced entities. See trigger documentation.
+   * https://www.home-assistant.io/integrations/template#trigger
+   */
+  triggers?: Trigger | Trigger[] | IncludeList;
+
+  /**
+   * Variables available to the triggers (for trigger-based entities only). Requires triggers.
+   * https://www.home-assistant.io/integrations/template/#trigger_variables
+   */
+  trigger_variables?: Data;
+
+  /**
+   * Variables that can be referenced in the templates of the entities in this block. Trigger-based entities resolve them after the triggers and actions; state-based entities resolve them when the configuration is loaded.
+   * https://www.home-assistant.io/integrations/template/#variables
+   */
+  variables?: Data;
+
+  /**
    * Define template sensors or binary sensors based on a blueprint. Optional. See template template documentation.
    * https://www.home-assistant.io/integrations/template/#using-blueprints
    */
   use_blueprint?: BlueprintUsage;
+
+  /**
+   * Name of the entity created from the blueprint (with use_blueprint only).
+   * https://www.home-assistant.io/integrations/template/#using-blueprints
+   */
+  name?: Template;
 
   /**
    * The unique ID for this config block. This will be prefixed to all unique IDs of all entities in this block.
@@ -756,42 +794,24 @@ export interface SensorItem extends BaseItem {
   unit_of_measurement?: string;
 }
 
-interface SwitchItem {
-  /**
-   * Defines a template to get the available state of the component. If the template returns true, the device is available.
-   * https://www.home-assistant.io/integrations/switch.template#availability_template
-   */
-  availability?: Template;
-
-  /**
-   * Name to use in the frontend.
-   * https://www.home-assistant.io/integrations/switch.template#friendly_name
-   */
-  name?: string;
-
-  /**
-   * Defines a template for the icon of the switch.
-   * https://www.home-assistant.io/integrations/switch.template#icon_template
-   */
-  icon?: Template;
-
+interface SwitchItem extends BaseItem {
   /**
    * Defines an action to run when the switch is turned off.
-   * https://www.home-assistant.io/integrations/switch.template#turn_off
+   * https://www.home-assistant.io/integrations/template#turn_off
    */
-  turn_off: Action | Action[];
+  turn_off?: Action | Action[];
 
   /**
    * Defines an action to run when the switch is turned on.
-   * https://www.home-assistant.io/integrations/switch.template#turn_on
+   * https://www.home-assistant.io/integrations/template#turn_on
    */
-  turn_on: Action | Action[];
+  turn_on?: Action | Action[];
 
   /**
-   * An ID that uniquely identifies this switch. Set this to an unique value to allow customization trough the UI.
-   * https://www.home-assistant.io/integrations/switch.template#unique_id
+   * Flag that defines if the switch works in optimistic mode. Defaults to true when there is no state template.
+   * https://www.home-assistant.io/integrations/template#optimistic
    */
-  unique_id?: string;
+  optimistic?: boolean;
 
   /**
    * Defines a template to set the state of the switch. If not defined, the switch will optimistically assume all commands are successful.
