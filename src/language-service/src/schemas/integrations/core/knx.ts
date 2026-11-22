@@ -1833,7 +1833,16 @@ interface KnxTelegramTriggerOptions {
   outgoing?: boolean;
 }
 
-export interface KnxTelegramTrigger {
+/**
+ * A KNX telegram trigger. Its filters go either in `options` or, in the older style, at the top
+ * level, but not both: Home Assistant only moves top-level filters into `options` when there's
+ * no `options`, and rejects them otherwise.
+ * Source: move_top_level_schema_fields_to_options in
+ * https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/automation.py
+ */
+export type KnxTelegramTrigger = KnxTelegramTriggerWithOptions | KnxTelegramTriggerLegacy;
+
+interface KnxTelegramTriggerBase {
   /**
    * Alias for the KNX telegram trigger.
    */
@@ -1858,55 +1867,6 @@ export interface KnxTelegramTrigger {
   enabled?: boolean;
 
   /**
-   * A group address or list of addresses to listen on.
-   * Legacy location - prefer setting this in `options`.
-   * https://www.home-assistant.io/integrations/knx/#triggers
-   */
-  destination?: GroupAddresses;
-
-  /**
-   * DPT identifier to decode payload (e.g., "2byte_float").
-   * Legacy location - prefer setting this in `options`.
-   * https://www.home-assistant.io/integrations/knx/#triggers
-   */
-  type?: ValueType | string | Integer;
-
-  /**
-   * Fire on GroupValueWrite telegrams. Defaults to true.
-   * Legacy location - prefer setting this in `options`.
-   * https://www.home-assistant.io/integrations/knx/#triggers
-   */
-  group_value_write?: boolean;
-
-  /**
-   * Fire on GroupValueResponse telegrams. Defaults to true.
-   * Legacy location - prefer setting this in `options`.
-   * https://www.home-assistant.io/integrations/knx/#triggers
-   */
-  group_value_response?: boolean;
-
-  /**
-   * Fire on GroupValueRead telegrams. Defaults to true.
-   * Legacy location - prefer setting this in `options`.
-   * https://www.home-assistant.io/integrations/knx/#triggers
-   */
-  group_value_read?: boolean;
-
-  /**
-   * Fire on incoming telegrams. Defaults to true.
-   * Legacy location - prefer setting this in `options`.
-   * https://www.home-assistant.io/integrations/knx/#triggers
-   */
-  incoming?: boolean;
-
-  /**
-   * Fire on outgoing telegrams. Defaults to true.
-   * Legacy location - prefer setting this in `options`.
-   * https://www.home-assistant.io/integrations/knx/#triggers
-   */
-  outgoing?: boolean;
-
-  /**
    * An personal identifier for this trigger, that is passed into the trigger
    * variables when the automation triggers using this trigger.
    * https://www.home-assistant.io/integrations/knx/#triggers
@@ -1920,10 +1880,18 @@ export interface KnxTelegramTrigger {
    * https://www.home-assistant.io/integrations/knx/#triggers
    */
   variables?: Data;
+}
 
+interface KnxTelegramTriggerWithOptions extends KnxTelegramTriggerBase {
   /**
-   * Options of the KNX telegram trigger.
+   * Options of the KNX telegram trigger. With `options`, the filters can't also be set at the
+   * top level.
    * https://www.home-assistant.io/integrations/knx/#triggers
    */
-  options?: KnxTelegramTriggerOptions;
+  options: KnxTelegramTriggerOptions;
 }
+
+/**
+ * The older style, with the filters at the top level and no `options`. Prefer `options`.
+ */
+interface KnxTelegramTriggerLegacy extends KnxTelegramTriggerBase, KnxTelegramTriggerOptions {}
