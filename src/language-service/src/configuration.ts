@@ -63,20 +63,16 @@ export class ConfigurationService implements IConfigurationService {
     if (incoming && typeof incoming === "object") {
       console.log("Got valid configuration object");
       
-      // The client always sends the token and URL as a pair. An empty token clears the old
-      // one, so it's never reused with a different URL.
-      if (incoming.longLivedAccessToken !== undefined) {
+      // The client always sends the token and URL as a pair, so either one replaces both. A
+      // missing or empty value clears the old one: it's never reused with a different partner.
+      if (incoming.longLivedAccessToken !== undefined || incoming.hostUrl !== undefined) {
         this.token = incoming.longLivedAccessToken || undefined;
+        this.url = this.getUri(incoming.hostUrl ?? "");
       }
       if (this.token) {
         console.log(`Token found in configuration (length: ${this.token.length})`);
       } else {
         console.log("No token in incoming configuration");
-      }
-      
-      // Handle URL configuration
-      if (incoming.hostUrl !== undefined) {
-        this.url = this.getUri(incoming.hostUrl);
       }
       
       this.ignoreCertificates = !!incoming.ignoreCertificates;
@@ -150,8 +146,9 @@ export class ConfigurationService implements IConfigurationService {
       console.log("Dev mock connection enabled via HASS_DEV_MOCK env var");
     }
     
-    // Set URL from environment if needed
-    if (!this.url && envHassServer) {
+    // Set URL from environment if needed, but only for the environment's own token (or when
+    // no token is set yet): a workspace token without a workspace URL stays incomplete
+    if (!this.url && envHassServer && (!this.token || this.token === envHassToken)) {
       this.url = this.getUri(envHassServer);
       console.log(`Using URL from HASS_SERVER env var: ${this.url}`);
     }
