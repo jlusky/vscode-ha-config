@@ -952,7 +952,7 @@ interface ExposeSensor {
   value_template?: Template;
 }
 
-interface Fan extends EntityBase {
+interface FanBase extends EntityBase {
   /**
    * KNX group address for setting the percentage or step of the fan. DPT 5.001 or DPT 5.010. At least one of `address` or `switch_address` is required.
    * https://www.home-assistant.io/integrations/knx#address
@@ -1017,6 +1017,13 @@ interface Fan extends EntityBase {
    */
   sync_state?: boolean | number | string;
 }
+
+/**
+ * A fan needs a group address to control it: `address`, `switch_address` or both.
+ */
+type Fan =
+  | (FanBase & { address: GroupAddresses })
+  | (FanBase & { switch_address: GroupAddresses });
 
 interface LightColor {
   /**
