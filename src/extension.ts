@@ -91,8 +91,9 @@ export async function activate(
     initializationOptions: async () => {
       // Pass token and URL directly in initialization options
       try {
-        const token = await AuthManager.getToken(context);
-        const url = await AuthManager.getUrl(context);
+        const connection = await AuthManager.resolveConnection(context);
+        const token = connection.token?.value;
+        const url = connection.url?.value;
         const config = vscode.workspace.getConfiguration("vscode-ha-config");
 
         console.log("Setting up initialization options for Home Assistant language server");

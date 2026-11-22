@@ -114,6 +114,30 @@ export class AuthManager {
   }
 
   /**
+   * Find the URL and token to connect with, from one decision about where they come from.
+   * Use this, not getUrl and getToken one after the other, whenever the token is sent to the
+   * URL: the workspace settings could change between two separate lookups.
+   */
+  public static async resolveConnection(
+    context: vscode.ExtensionContext,
+  ): Promise<{ url?: ResolvedCredential; token?: ResolvedCredential }> {
+    if (AuthManager.usesWorkspaceCredentials()) {
+      // No await between the decision and these reads
+      const url = AuthManager.getWorkspaceSetting("url");
+      const token = AuthManager.getWorkspaceSetting("token");
+      return {
+        url: url ? { value: url, source: "workspace settings" } : undefined,
+        token: token ? { value: token, source: "workspace settings" } : undefined,
+      };
+    }
+    const [url, token] = await Promise.all([
+      AuthManager.resolveShared(context, "url"),
+      AuthManager.resolveShared(context, "token"),
+    ]);
+    return { url, token };
+  }
+
+  /**
    * Find the token or URL the user has set up for every workspace, ignoring workspace settings
    */
   public static async resolveShared(

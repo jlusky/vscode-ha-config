@@ -64,8 +64,9 @@ export class HomeAssistantStatusBar {
       }
 
       // Get token and URL from SecretStorage
-      const token = await AuthManager.getToken(this.context);
-      const url = await AuthManager.getUrl(this.context);
+      const connection = await AuthManager.resolveConnection(this.context);
+      const token = connection.token?.value;
+      const url = connection.url?.value;
       
       // If token or URL is missing, show disconnected status
       if (!token || !url) {

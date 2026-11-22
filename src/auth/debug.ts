@@ -25,8 +25,8 @@ export async function debugAuthSettings(context: vscode.ExtensionContext): Promi
     ["user settings (deprecated, migrated to SecretStorage)", AuthManager.getUserSetting("token")],
   ];
   // The pair actually used: the URL and token always come from the same place
-  const activeUrlEntry = await AuthManager.resolve(context, "url");
-  const activeTokenEntry = await AuthManager.resolve(context, "token");
+  const { url: activeUrlEntry, token: activeTokenEntry } =
+    await AuthManager.resolveConnection(context);
   const activeUrl = activeUrlEntry?.value;
   const activeToken = activeTokenEntry?.value;
 

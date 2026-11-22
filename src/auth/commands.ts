@@ -160,8 +160,8 @@ async function clearToken(context: vscode.ExtensionContext): Promise<void> {
 }
 
 async function viewAuthDetails(context: vscode.ExtensionContext): Promise<void> {
-  const resolvedToken = await AuthManager.resolve(context, "token");
-  const resolvedUrl = await AuthManager.resolve(context, "url");
+  const { token: resolvedToken, url: resolvedUrl } =
+    await AuthManager.resolveConnection(context);
   const token = resolvedToken?.value;
   const url = resolvedUrl?.value;
 
@@ -187,8 +187,9 @@ async function viewAuthDetails(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function testConnection(context: vscode.ExtensionContext): Promise<void> {
-  const token = await AuthManager.getToken(context);
-  const hostUrl = await AuthManager.getUrl(context);
+  const connection = await AuthManager.resolveConnection(context);
+  const token = connection.token?.value;
+  const hostUrl = connection.url?.value;
   
   if (!hostUrl) {
     vscode.window.showErrorMessage(

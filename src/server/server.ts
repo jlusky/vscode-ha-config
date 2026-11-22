@@ -35,23 +35,16 @@ connection.onInitialize(async (params) => {
   // Check if initialization contains the token in custom data
   const haConfig = params.initializationOptions && params.initializationOptions["vscode-ha-config"];
   
+  const configurationService = new ConfigurationService();
+
   if (haConfig) {
-    // Extract token
-    if (haConfig.longLivedAccessToken) {
-      const token = haConfig.longLivedAccessToken;
-      console.log(`Token provided in initialization options (length: ${token.length}, first 5 chars: ${token.substring(0, 5)}...)`);
-      process.env.HASS_TOKEN = token; // Set as environment variable for backup
-    } else {
-      console.log("No token provided in initialization options");
-    }
-    
-    // Extract Home Assistant instance URL
-    if (haConfig.hostUrl) {
-      console.log(`Home Assistant instance URL provided in initialization options: ${haConfig.hostUrl}`);
-      process.env.HASS_SERVER = haConfig.hostUrl;
-    } else {
-      console.log("No Home Assistant instance URL provided in initialization options");
-    }
+    console.log(
+      `Initialization options: token ${haConfig.longLivedAccessToken ? `provided (length: ${haConfig.longLivedAccessToken.length})` : "not provided"}, URL ${haConfig.hostUrl || "not provided"}`,
+    );
+    // Apply the token and URL as one pair, like any later configuration update. They aren't
+    // copied into HASS_TOKEN / HASS_SERVER: those are only for real environment credentials,
+    // so clearing the credentials later can't bring these back.
+    configurationService.updateConfiguration({ settings: { "vscode-ha-config": haConfig } });
 
     if (haConfig.devMockConnection) {
       console.log("Dev mock connection enabled via initialization options");
@@ -60,8 +53,6 @@ connection.onInitialize(async (params) => {
   } else {
     console.log("No Home Assistant configuration in initialization options");
   }
-
-  const configurationService = new ConfigurationService();
   const haConnection = new HaConnection(configurationService);
   const fileAccessor = new VsCodeFileAccessor(params.rootUri, documents);
   const haConfigInstance = new HomeAssistantConfiguration(fileAccessor);

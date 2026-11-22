@@ -111,14 +111,15 @@ export class AuthMiddleware {
     try {
       AuthMiddleware.log("Sending initial configuration with token and URL");
       
-      const token = await AuthManager.getToken(this.context);
+      const credentials = await AuthManager.resolveConnection(this.context);
+      const token = credentials.token?.value;
 
       if (!token) {
         AuthMiddleware.log("No token available for initial configuration");
         return;
       }
 
-      const hostUrl = await AuthManager.getUrl(this.context);
+      const hostUrl = credentials.url?.value;
 
       if (!hostUrl) {
         AuthMiddleware.log("No server URL available for initial configuration");
@@ -180,8 +181,9 @@ export class AuthMiddleware {
     if (Array.isArray(result)) {
       for (const item of result) {
         if (item && typeof item === "object" && "vscode-ha-config" in item) {
-          const token = await AuthManager.getToken(this.context);
-          const url = await AuthManager.getUrl(this.context);
+          const credentials = await AuthManager.resolveConnection(this.context);
+          const token = credentials.token?.value;
+          const url = credentials.url?.value;
 
           if (!item["vscode-ha-config"]) {
             item["vscode-ha-config"] = {};
@@ -226,8 +228,9 @@ export class AuthMiddleware {
           AuthMiddleware.log("Created missing vscode-ha-config settings object in notification");
         }
         
-        const token = await AuthManager.getToken(this.context);
-        const url = await AuthManager.getUrl(this.context);
+        const credentials = await AuthManager.resolveConnection(this.context);
+        const token = credentials.token?.value;
+        const url = credentials.url?.value;
 
         // Always replace both values, so the server never pairs a raw workspace setting
         // with a token from somewhere else
