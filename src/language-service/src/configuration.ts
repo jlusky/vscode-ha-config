@@ -37,6 +37,9 @@ export class ConfigurationService implements IConfigurationService {
 
   public devMockConnection = false;
 
+  /** Whether a configuration update from the client has supplied the URL and token */
+  private credentialsFromClient = false;
+
   constructor() {
     this.setConfigViaEnvironmentVariables();
 
@@ -68,6 +71,7 @@ export class ConfigurationService implements IConfigurationService {
       if (incoming.longLivedAccessToken !== undefined || incoming.hostUrl !== undefined) {
         this.token = incoming.longLivedAccessToken || undefined;
         this.url = this.getUri(incoming.hostUrl ?? "");
+        this.credentialsFromClient = true;
       }
       if (this.token) {
         console.log(`Token found in configuration (length: ${this.token.length})`);
@@ -145,7 +149,14 @@ export class ConfigurationService implements IConfigurationService {
       this.devMockConnection = true;
       console.log("Dev mock connection enabled via HASS_DEV_MOCK env var");
     }
-    
+
+    // Once the client has sent a URL and token, they're the pair to use: the client already
+    // considered the environment when choosing them. Filling in a missing half from here could
+    // complete a workspace's incomplete pair with credentials it didn't supply.
+    if (this.credentialsFromClient) {
+      return;
+    }
+
     // Set URL from environment if needed, but only for the environment's own token (or when
     // no token is set yet): a workspace token without a workspace URL stays incomplete
     if (!this.url && envHassServer && (!this.token || this.token === envHassToken)) {

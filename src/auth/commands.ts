@@ -190,7 +190,13 @@ export async function testConnection(context: vscode.ExtensionContext): Promise<
   const connection = await AuthManager.resolveConnection(context);
   const token = connection.token?.value;
   const hostUrl = connection.url?.value;
-  
+
+  // A workspace with its own connection is fixed in its settings, not the stored credentials
+  if (AuthManager.usesWorkspaceCredentials() && (!hostUrl || !token)) {
+    AuthManager.showIncompleteWorkspaceCredentials();
+    return;
+  }
+
   if (!hostUrl) {
     vscode.window.showErrorMessage(
       "Home Assistant instance URL is not set. Please set it first."
