@@ -129,7 +129,33 @@ export interface SectionsView extends BaseView {
    * Header shown above the sections, such as a title card and badges.
    * https://www.home-assistant.io/dashboards/sections/
    */
-  header?: any;
+  header?: SectionsViewHeader;
+}
+
+/**
+ * Source: LovelaceViewHeaderConfig in
+ * https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace/config/view.ts
+ */
+export interface SectionsViewHeader {
+  /**
+   * The card shown in the header, usually a Markdown card with the view's title.
+   */
+  card?: Card;
+
+  /**
+   * How the header card and badges are arranged.
+   */
+  layout?: "start" | "center" | "responsive";
+
+  /**
+   * Show the view's badges above or below the header card.
+   */
+  badges_position?: "bottom" | "top";
+
+  /**
+   * Wrap the badges onto more lines, or scroll them horizontally.
+   */
+  badges_wrap?: "wrap" | "scroll";
 }
 
 export interface SectionBackground {
