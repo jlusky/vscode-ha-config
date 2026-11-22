@@ -188,8 +188,18 @@ jobs:
         # Publishes the same .vsix to open-vsx.org under the "blown" namespace (the publisher
         # in package.json). Trusted Publishing: ovsx exchanges GitHub's OIDC token for a
         # short-lived Open VSX token, so there is no publishing secret.
-        # Needs a trusted publisher for this repository and workflow on the namespace
-        run: npx ovsx publish --trusted-publishing --packagePath vscode-ha-config.vsix --skip-duplicate
+        # Needs a trusted publisher for this repository and workflow on the namespace.
+        # A new trusted publisher stays pending until its first publish sends the registration
+        # code; store it as the OVSX_REGISTRATION_CODE secret, then delete the secret once a
+        # release has published. Without the secret the option is left out.
+        run: |
+          args=(--trusted-publishing --packagePath vscode-ha-config.vsix --skip-duplicate)
+          if [ -n "$OVSX_REGISTRATION_CODE" ]; then
+            args+=(--registrationCode "$OVSX_REGISTRATION_CODE")
+          fi
+          npx ovsx publish "${args[@]}"
+        env:
+          OVSX_REGISTRATION_CODE: ${{ secrets.OVSX_REGISTRATION_CODE }}
 
       - name: 📎 Attach the .vsix to the release
         run: gh release upload "$TAG" vscode-ha-config.vsix --clobber
