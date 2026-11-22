@@ -37,8 +37,8 @@ jobs:
       contents: write
       # Read which PR each commit came from
       pull-requests: read
-      # Start the VS Code Extension workflow
-      actions: write
+    outputs:
+      tag: ${{ steps.publish.outputs.tag }}
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
@@ -106,6 +106,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: 🏷 Publish the release
+        id: publish
         if: steps.changes.outputs.release == 'true' && env.DRY_RUN != 'true'
         env:
           TAG: ${{ steps.changes.outputs.tag }}
@@ -116,11 +117,32 @@ jobs:
             echo "::error::$TAG is already released"
             exit 1
           fi
-          # Release Drafter keeps one draft for the next release. It only lists changes this
-          # release doesn't need (Dependabot PRs are left out of it), so publish it with these
-          # notes instead of leaving a second release with the same tag. It makes a new draft
-          # on the next push to dev.
-          draft=$(gh api "repos/$REPO/releases" --jq '[.[] | select(.draft)] | first | .id // empty')
+
+          # The tag may already exist without a release (pushed by hand, or left by a deleted
+          # release). Publishing would then release whatever commit it points to, not $SHA.
+          if ref=$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha' 2> ref-error.txt); then
+            read -r type tagged <<< "$ref"
+            # An annotated tag points to a tag object; follow it to the commit
+            if [ "$type" = "tag" ]; then
+              tagged=$(gh api "repos/$REPO/git/tags/$tagged" --jq .object.sha)
+            fi
+            if [ "$tagged" != "$SHA" ]; then
+              echo "::error::The tag $TAG already exists on $tagged, not $SHA. Delete it or release it by hand."
+              exit 1
+            fi
+          elif ! grep -q "HTTP 404" ref-error.txt; then
+            cat ref-error.txt
+            echo "::error::Couldn't check whether the tag $TAG exists"
+            exit 1
+          fi
+
+          # Release Drafter keeps one draft for the next release, named like v1.2.3, with the
+          # template's heading. It leaves Dependabot PRs out, so when only they are unreleased
+          # it lists no changes: publish it with these notes instead of leaving a second release
+          # for the same version. It makes a new draft on the next push to dev. Any other draft
+          # is left alone.
+          draft=$(gh api "repos/$REPO/releases" --paginate \
+            --jq '.[] | select(.draft and (.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) and ((.body // "") | startswith("## What’s Changed"))) | .id' | head -n 1)
           if [ -n "$draft" ]; then
             gh api -X PATCH "repos/$REPO/releases/$draft" \
               -f tag_name="$TAG" -f target_commitish="$SHA" -f name="$TAG" \
@@ -130,9 +152,24 @@ jobs:
               --notes-file notes.md --latest
           fi
           echo "Published $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: 🚀 Build, test and publish the extension
-        if: steps.changes.outputs.release == 'true' && env.DRY_RUN != 'true'
+  # A separate job, so if starting the build fails after the release is published, "Re-run
+  # failed jobs" retries it with the same tag. A new run wouldn't: it finds nothing unreleased.
+  # To publish a tag by hand, run the VS Code Extension workflow from the tag with release_tag.
+  publish:
+    name: Build, test and publish the extension
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Start the VS Code Extension workflow
+      actions: write
+    steps:
+      - name: 🚀 Start the VS Code Extension workflow for the tag
         env:
-          TAG: ${{ steps.changes.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.release.outputs.tag }}
         run: gh workflow run github-actions-vscode-extension.yml --repo "$REPO" --ref "$TAG" -f release_tag="$TAG"
