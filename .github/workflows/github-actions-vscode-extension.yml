@@ -128,19 +128,16 @@ jobs:
   # Runs when a GitHub release is published (normally the Release Drafter draft), after the
   # build and tests pass. The version comes from the release tag, so package.json's version
   # is not bumped by hand. Pre-releases are not published.
-  publish:
-    name: Publish Extension
+  #
+  # Building and publishing are separate jobs: npm ci runs dependencies' install scripts, so
+  # it runs here, in a job that can't request an OIDC token. The publish job gets only the
+  # finished .vsix and never runs install scripts.
+  package:
+    name: Package Extension
     needs: result
     if: github.event_name == 'release' && !github.event.release.prerelease
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      # Attach the .vsix to the release
-      contents: write
-      # Trusted Publishing for both the Marketplace (vsce) and Open VSX (ovsx): each
-      # exchanges GitHub's OIDC token for a short-lived credential, so there are no
-      # publishing secrets
-      id-token: write
     env:
       TAG: ${{ github.event.release.tag_name }}
 
@@ -178,6 +175,48 @@ jobs:
       # vscode:prepublish bundles dist/ with esbuild; node_modules isn't shipped
       - name: 📦 Package
         run: npx vsce package --no-dependencies -o vscode-ha-config.vsix
+
+      - name: ⤴️ Upload the .vsix
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vsix
+          path: vscode-ha-config.vsix
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish Extension
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # Attach the .vsix to the release
+      contents: write
+      # Trusted Publishing for both the Marketplace (vsce) and Open VSX (ovsx): each
+      # exchanges GitHub's OIDC token for a short-lived credential, so there are no
+      # publishing secrets
+      id-token: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+
+    steps:
+      - name: ⤵️ Check out code from GitHub
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: 🏗 Set up NodeJS
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # vsce and ovsx come from the lockfile. --ignore-scripts keeps every dependency's
+      # install script from running in this job, which can request an OIDC token.
+      - name: 🏗 Install the publishing tools
+        run: npm ci --ignore-scripts
+
+      - name: ⤵️ Download the .vsix
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: vsix
 
       - name: 🚀 VS Code Marketplace Publish
         # A rerun after a failed release upload must not fail on the already-published version
