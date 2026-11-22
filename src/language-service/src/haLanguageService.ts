@@ -203,8 +203,9 @@ export class HomeAssistantLanguageService {
         continue;
       }
 
-      // A document marker ends the search, even with a comment or content after it
-      if (/^(?:---|\.\.\.)(?:\s|$)/.test(trimmedLine)) {
+      // A document marker at column zero ends the search, even with a comment or content
+      // after it. Indented text, such as block scalar content, is not a marker.
+      if (/^(?:---|\.\.\.)(?:\s|$)/.test(lines[i])) {
         return false;
       }
 

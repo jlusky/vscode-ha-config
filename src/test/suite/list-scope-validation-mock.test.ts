@@ -227,6 +227,24 @@ suite("List Scope Validation Mock Test", () => {
     assert.deepStrictEqual(withCode(diagnostics, "unknown-area"), []);
   });
 
+  test("indented --- inside a block scalar doesn't end the list", async () => {
+    const diagnostics = await diagnose(`script:
+  test:
+    sequence:
+      - action: light.turn_on
+        target:
+          entity_id:
+            - light.kitchen
+            - >-
+              --- not a document marker
+            - light.missing_one
+`);
+
+    assert.deepStrictEqual(withCode(diagnostics, "unknown-entity"), [
+      "Entity 'light.missing_one' does not exist in your Home Assistant instance",
+    ]);
+  });
+
   test("a key with an anchor still owns the list below it", async () => {
     const diagnostics = await diagnose(`script:
   test:
