@@ -1,5 +1,6 @@
 import { Diagnostic } from "vscode-languageserver-protocol";
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { CST, Lexer } from "yaml";
 
 /**
  * Comment directives that silence this extension's own diagnostics (unknown entities, areas,
@@ -21,35 +22,37 @@ export interface IgnoreDirectives {
 
 const DIRECTIVE_REGEX = /homeassistant:(ignore|disable-line|disable-next-line|disable|enable)\b/g;
 
+/** Control tokens the lexer inserts that aren't part of the source text */
+const CONTROL_TOKENS = new Set(["\u0002", "\u0018", "\u001f"]);
+
 /**
- * Returns the comment on a YAML line: a "#" at the start of the line or after whitespace,
- * outside quotes. A "#" inside a value such as "#ff0000" or url#anchor is not a comment.
+ * Returns the comments in the document by zero-based line, without the "#". Uses the YAML
+ * lexer, so a "#" inside a quoted or block scalar (`"a \" # x"`, `description: |`), in a
+ * value such as `url#anchor`, or after an apostrophe in a plain scalar is handled as YAML does.
  */
-function commentOf(line: string): string | undefined {
-  let quote: string | undefined;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (quote) {
-      if (char === quote) {
-        quote = undefined;
-      }
-    } else if (char === "\"" || char === "'") {
-      quote = char;
-    } else if (char === "#" && (i === 0 || /\s/.test(line[i - 1]))) {
-      return line.slice(i + 1);
+function commentsByLine(document: TextDocument): Map<number, string> {
+  const comments = new Map<number, string>();
+  let offset = 0;
+  for (const token of new Lexer().lex(document.getText())) {
+    if (CONTROL_TOKENS.has(token)) {
+      continue;
     }
+    if (CST.tokenType(token) === "comment") {
+      comments.set(document.positionAt(offset).line, token.slice(1));
+    }
+    offset += token.length;
   }
-  return undefined;
+  return comments;
 }
 
 export function parseIgnoreDirectives(document: TextDocument): IgnoreDirectives {
   const ignoredIds = new Set<string>();
   const disabledLines = new Set<number>();
-  const lines = document.getText().split(/\r?\n/);
+  const comments = commentsByLine(document);
   let inDisabledRange = false;
 
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-    const comment = commentOf(lines[lineIndex]);
+  for (let lineIndex = 0; lineIndex < document.lineCount; lineIndex++) {
+    const comment = comments.get(lineIndex);
     let lineDisabled = inDisabledRange;
 
     if (comment !== undefined) {

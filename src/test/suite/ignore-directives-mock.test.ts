@@ -128,6 +128,43 @@ name: "quoted" # homeassistant:ignore light.a light.b
     assert.deepStrictEqual([...ignoredIds], ["light.a", "light.b"]);
   });
 
+  test("escaped quotes, block scalars and multi-line quoted values hide directives", () => {
+    const { disabledLines, ignoredIds } = parseIgnoreDirectives(
+      document(`name: "a \\" # homeassistant:disable"
+description: |
+  # homeassistant:disable
+  more text
+message: "first line
+  # homeassistant:disable
+  last line"
+entity_id: light.remote
+`),
+    );
+
+    assert.deepStrictEqual([...disabledLines], []);
+    assert.deepStrictEqual([...ignoredIds], []);
+  });
+
+  test("an apostrophe in an unquoted value doesn't hide the comment after it", () => {
+    const { ignoredIds } = parseIgnoreDirectives(
+      document("alias: Bob's lamp # homeassistant:ignore light.remote\r\nentity_id: light.remote\r\n"),
+    );
+
+    assert.deepStrictEqual([...ignoredIds], ["light.remote"]);
+  });
+
+  test("disable-next-line before the entity_id line of a list item", async () => {
+    const reported = await unknownEntities(`triggers:
+  - trigger: state
+    # homeassistant:disable-next-line
+    entity_id: light.not_created_yet
+  - trigger: state
+    entity_id: light.reported
+`);
+
+    assert.deepStrictEqual(reported, [unknown("light.reported")]);
+  });
+
   test("other diagnostics, such as schema errors, are never silenced", () => {
     const doc = document("# homeassistant:disable\nentity_id: light.remote\n");
     const range = Range.create(1, 11, 1, 23);

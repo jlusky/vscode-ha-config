@@ -75,8 +75,8 @@ automation:
       - trigger: state
         entity_id: light.staging # homeassistant:disable-line
 
-      # homeassistant:disable-next-line
       - trigger: state
+        # homeassistant:disable-next-line
         entity_id: light.not_created_yet
 
     # homeassistant:disable
