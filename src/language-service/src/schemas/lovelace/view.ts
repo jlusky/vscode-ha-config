@@ -48,10 +48,10 @@ interface BaseView {
   theme?: string;
 
   /**
-   * The title or name.
+   * The title or name. Without one, Home Assistant names the view after its path or position.
    * https://www.home-assistant.io/lovelace/dashboards-and-views/#title
    */
-  title: string;
+  title?: string;
 
   /**
    * You can specify the visibility of views as a whole or per-user. (Note: This is only for the display of the tabs. The URL path is still accessible.)

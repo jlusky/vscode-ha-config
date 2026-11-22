@@ -1759,11 +1759,19 @@ export type SupportedFeatureWeather =
  */
 export type IntegrationTriggerOrCondition = string;
 
+/**
+ * One entity ID or a list of them. Unlike Entities, a comma-separated string isn't accepted.
+ * @TJS-pattern ^(?!.+__)(?!_)[\da-z_]+(?<!_)\.(?!_)[\da-z_]+(?<!_)$
+ * @items.pattern ^(?!.+__)(?!_)[\da-z_]+(?<!_)\.(?!_)[\da-z_]+(?<!_)$
+ */
+type TargetEntities = Entity | Entity[];
+
 interface TargetIds {
   /**
-   * The entity (or entities) to target.
+   * The entity (or entities) to target. Unlike action targets, a comma-separated string isn't
+   * split here: use a list for several entities.
    */
-  entity_id?: Entities;
+  entity_id?: TargetEntities;
 
   /**
    * The device (or devices) to target.
