@@ -28,6 +28,19 @@ export interface Schema extends CardOptions {
   title?: string;
 
   /**
+   * Show only the text, without the card background. Home Assistant sets this on the default
+   * header card of a sections view.
+   * https://www.home-assistant.io/dashboards/markdown/#text_only
+   */
+  text_only?: boolean;
+
+  /**
+   * Show the card when the rendered content is empty.
+   * https://www.home-assistant.io/dashboards/markdown/#show_empty
+   */
+  show_empty?: boolean;
+
+  /**
    * The algorithm for placing cards aesthetically in Lovelace may have problems with the Markdown card if it contains templates. You can use this value to help it estimate the height of the card in units of 50 pixels (approximately 3 lines of text in default size). (e.g., 4).
    * https://www.home-assistant.io/lovelace/markdown/#card_size
    */
