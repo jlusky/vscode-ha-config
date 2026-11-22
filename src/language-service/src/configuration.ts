@@ -37,6 +37,9 @@ export class ConfigurationService implements IConfigurationService {
 
   public devMockConnection = false;
 
+  /** Whether a configuration update from the client has supplied the URL and token */
+  private credentialsFromClient = false;
+
   constructor() {
     this.setConfigViaEnvironmentVariables();
 
@@ -63,17 +66,17 @@ export class ConfigurationService implements IConfigurationService {
     if (incoming && typeof incoming === "object") {
       console.log("Got valid configuration object");
       
-      // Check if we have a token in the incoming configuration
-      if (incoming.longLivedAccessToken) {
-        this.token = incoming.longLivedAccessToken;
-        console.log(`Token found in configuration (length: ${this.token.length}, first 5 chars: ${this.token.substring(0, 5)}...)`);
+      // The client always sends the token and URL as a pair, so either one replaces both. A
+      // missing or empty value clears the old one: it's never reused with a different partner.
+      if (incoming.longLivedAccessToken !== undefined || incoming.hostUrl !== undefined) {
+        this.token = incoming.longLivedAccessToken || undefined;
+        this.url = this.getUri(incoming.hostUrl ?? "");
+        this.credentialsFromClient = true;
+      }
+      if (this.token) {
+        console.log(`Token found in configuration (length: ${this.token.length})`);
       } else {
         console.log("No token in incoming configuration");
-      }
-      
-      // Handle URL configuration
-      if (incoming.hostUrl !== undefined) {
-        this.url = this.getUri(incoming.hostUrl);
       }
       
       this.ignoreCertificates = !!incoming.ignoreCertificates;
@@ -146,15 +149,28 @@ export class ConfigurationService implements IConfigurationService {
       this.devMockConnection = true;
       console.log("Dev mock connection enabled via HASS_DEV_MOCK env var");
     }
-    
-    // Set URL from environment if needed
-    if (!this.url && envHassServer) {
+
+    // Once the client has sent a URL and token, they're the pair to use: the client already
+    // considered the environment when choosing them. Filling in a missing half from here could
+    // complete a workspace's incomplete pair with credentials it didn't supply.
+    if (this.credentialsFromClient) {
+      return;
+    }
+
+    // Set URL from environment if needed, but only for the environment's own token (or when
+    // no token is set yet): a workspace token without a workspace URL stays incomplete
+    if (!this.url && envHassServer && (!this.token || this.token === envHassToken)) {
       this.url = this.getUri(envHassServer);
       console.log(`Using URL from HASS_SERVER env var: ${this.url}`);
     }
     
-    // Set token from environment if needed
-    if (!this.token && envHassToken) {
+    // Set token from environment if needed, but only for the environment's own URL (or when
+    // no URL is set yet): never send it to a URL from somewhere else
+    if (
+      !this.token &&
+      envHassToken &&
+      (!this.url || (envHassServer !== undefined && this.url === this.getUri(envHassServer)))
+    ) {
       this.token = envHassToken;
       console.log(`Using token from HASS_TOKEN env var (length: ${this.token.length})`);
     }

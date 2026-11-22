@@ -9,68 +9,62 @@ import { AuthManager } from "./manager";
  * @param context Extension context
  */
 export async function debugAuthSettings(context: vscode.ExtensionContext): Promise<void> {
-  // Get token from SecretStorage
-  const secretToken = await AuthManager.getToken(context);
-  // Get URL from SecretStorage
-  const secretUrl = await AuthManager.getUrl(context);
-  
-  // Get token from settings (for migration check)
   const config = vscode.workspace.getConfiguration("vscode-ha-config");
-  const settingsToken = config.get<string>("longLivedAccessToken");
-  // Get URL from settings (for migration check)
-  const settingsUrl = config.get<string>("hostUrl");
-  
-  // Check environment variables
-  const envToken = process.env.HASS_TOKEN || process.env.SUPERVISOR_TOKEN;
-  const envUrl = process.env.HASS_SERVER || (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core" : undefined);
-  
+
+  // Every source, in the order AuthManager looks them up
+  const urlSources: [string, string | undefined][] = [
+    ["workspace settings", AuthManager.getWorkspaceSetting("url")],
+    ["SecretStorage", await AuthManager.getSecret(context, "url")],
+    ["environment", AuthManager.getEnvironment("url")],
+    ["user settings (deprecated, migrated to SecretStorage)", AuthManager.getUserSetting("url")],
+  ];
+  const tokenSources: [string, string | undefined][] = [
+    ["workspace settings", AuthManager.getWorkspaceSetting("token")],
+    ["SecretStorage", await AuthManager.getSecret(context, "token")],
+    ["environment", AuthManager.getEnvironment("token")],
+    ["user settings (deprecated, migrated to SecretStorage)", AuthManager.getUserSetting("token")],
+  ];
+  // The pair actually used: the URL and token always come from the same place
+  const { url: activeUrlEntry, token: activeTokenEntry } =
+    await AuthManager.resolveConnection(context);
+  const activeUrl = activeUrlEntry?.value;
+  const activeToken = activeTokenEntry?.value;
+
   // Show results
   const debugPanel = vscode.window.createOutputChannel("Home Assistant Auth Debug");
   debugPanel.clear();
   debugPanel.appendLine("Home Assistant Connection Status:");
   debugPanel.appendLine("---------------------------------");
-  
+  debugPanel.appendLine("If the workspace settings set the URL or token, both come from the workspace settings. Otherwise the first source that is set is used: SecretStorage, environment, then user settings.");
+  if (!vscode.workspace.isTrusted) {
+    debugPanel.appendLine("This workspace isn't trusted, so its settings are ignored.");
+  }
+
   debugPanel.appendLine("\n--- Home Assistant Instance URL --- ");
-  debugPanel.appendLine(`URL in SecretStorage: ${secretUrl || "Not configured"}`);
-  debugPanel.appendLine(`URL in settings.json (deprecated): ${settingsUrl || "Not configured"}`);
-  debugPanel.appendLine(`URL in environment: ${envUrl || "Not configured"}`);
-  
-  const activeUrl = secretUrl || envUrl || settingsUrl;
-  if (activeUrl) {
+  for (const [source, value] of urlSources) {
+    debugPanel.appendLine(`URL in ${source}: ${value || "Not configured"}`);
+  }
+
+  if (activeUrlEntry) {
     debugPanel.appendLine(`Active URL: ${activeUrl}`);
-    if (secretUrl === activeUrl) {
-      debugPanel.appendLine("URL source: SecretStorage (recommended)");
-    } else if (envUrl === activeUrl) {
-      debugPanel.appendLine("URL source: Environment variable");
-    } else if (settingsUrl === activeUrl) {
-      debugPanel.appendLine("URL source: settings.json (deprecated, should be migrated)");
-    }
+    debugPanel.appendLine(`URL source: ${activeUrlEntry.source}`);
   } else {
     debugPanel.appendLine("No active URL found. Please configure the Home Assistant instance URL.");
   }
 
   debugPanel.appendLine("\n--- Access Token --- ");
-  debugPanel.appendLine(`Token in SecretStorage: ${secretToken ? "Present" : "Not present"}`);
-  debugPanel.appendLine(`Token in settings.json (deprecated): ${settingsToken ? "Present" : "Not present"}`);
-  debugPanel.appendLine(`Token in environment: ${envToken ? "Present" : "Not present"}`);
-  
+  for (const [source, value] of tokenSources) {
+    debugPanel.appendLine(`Token in ${source}: ${value ? "Present" : "Not present"}`);
+  }
+
   // Show token details if available
-  const activeToken = secretToken || envToken || settingsToken;
-  if (activeToken) {
+  if (activeToken && activeTokenEntry) {
     const obscuredToken = activeToken.length <= 10 
       ? "***" 
       : `${activeToken.substring(0, 5)}...${activeToken.substring(activeToken.length - 5)}`;
     debugPanel.appendLine(`Active token (obscured): ${obscuredToken}`);
-    
-    // Show which source is being used
-    if (secretToken === activeToken) {
-      debugPanel.appendLine("Token source: SecretStorage (recommended)");
-    } else if (envToken === activeToken) {
-      debugPanel.appendLine("Token source: Environment variable");
-    } else if (settingsToken === activeToken) {
-      debugPanel.appendLine("Token source: settings.json (deprecated, should be migrated)");
-    }
-    
+    debugPanel.appendLine(`Token source: ${activeTokenEntry.source}`);
+
     // Check token format
     if (activeToken.startsWith("eyJ")) {
       debugPanel.appendLine("Token appears to be in JWT format");
