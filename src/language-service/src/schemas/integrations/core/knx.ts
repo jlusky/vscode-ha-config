@@ -795,10 +795,10 @@ interface Cover {
 
 interface Event {
   /**
-   * KNX group address to fire events.
-   * https://www.home-assistant.io/integrations/knx#state_address
+   * KNX group addresses to fire events for. Patterns with a wildcard (*) in place of a part, and ranges such as 1/2/3-6, are allowed.
+   * https://www.home-assistant.io/integrations/knx#events
    */
-  address: GroupAddresses;
+  address: string | string[];
 
   /**
    * A type from the value types. The decoded value will be written to the event data `value` key.
@@ -1642,6 +1642,12 @@ export interface KnxTelegramTrigger {
    * Alias for the KNX telegram trigger.
    */
   alias?: string;
+
+  /**
+   * Note displayed in the Home Assistant automation editor.
+   * https://www.home-assistant.io/docs/automation/editor/#adding-notes-to-an-automation
+   */
+  note?: string;
 
   /**
    * KNX telegram trigger fires on incoming or outgoing KNX telegrams matching specified criteria.

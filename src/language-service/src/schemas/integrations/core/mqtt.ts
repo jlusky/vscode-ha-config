@@ -292,9 +292,16 @@ interface BaseItem {
   json_attributes_topic?: string;
 
   /**
-   * An ID that uniquely identifies this sensor. If two sensors have the same unique ID, Home Assistant will raise an exception.
+   * DEPRECATED.
+   * Replaced by default_entity_id in Home Assistant 2025.10. Use default_entity_id instead.
    */
-  object_id?: string;
+  object_id?: Deprecated;
+
+  /**
+   * The entity ID the entity is created with, including the domain, for example sensor.my_sensor. Replaces object_id.
+   * https://www.home-assistant.io/integrations/mqtt/#default_entity_id
+   */
+  default_entity_id?: string;
 
   /**
    * An ID that uniquely identifies this sensor. If two sensors have the same unique ID, Home Assistant will raise an exception.
@@ -1125,10 +1132,16 @@ export interface DeviceTrackerItem extends BaseItem {
   name?: string;
 
   /**
-   * Used instead of `name` for automatic generation of `entity_id`.
-   * https://www.home-assistant.io/integrations/device_tracker.mqtt/#object_id
+   * DEPRECATED.
+   * Replaced by default_entity_id in Home Assistant 2025.10. Use default_entity_id instead.
    */
-  object_id?: string;
+  object_id?: Deprecated;
+
+  /**
+   * The entity ID the entity is created with, including the domain, for example sensor.my_sensor. Replaces object_id.
+   * https://www.home-assistant.io/integrations/mqtt/#default_entity_id
+   */
+  default_entity_id?: string;
 
   /**
    * An ID that uniquely identifies this device_tracker. If two device_trackers have the same unique ID, Home Assistant will raise an exception.
