@@ -116,7 +116,17 @@ export class SchemaServiceForIncludes {
         // yaml-language-server's getSchemaCandidatesForResource matches the raw
         // document URI (VS Code uses encoded Windows drive letters like c%3A) and
         // does not normalize before picomatch. Use URI.toString() (encoded).
-        const absolutePath = await fs.realpath(haFiles[sourceFile].filename);
+        let absolutePath: string;
+        try {
+          absolutePath = await fs.realpath(haFiles[sourceFile].filename);
+        } catch (error) {
+          // An include that points at a missing file (for example in an old backup folder)
+          // must not stop the schemas being applied to every other file
+          console.log(
+            `Skipping schema for ${haFiles[sourceFile].filename}: ${error}`,
+          );
+          continue;
+        }
         const fileUri = vscodeUri.URI.file(absolutePath);
         const fileass = fileUri.toString(); // encoded: file:///c%3A/...
         const fileassUnencoded = fileUri.toString(true); // file:///c:/...

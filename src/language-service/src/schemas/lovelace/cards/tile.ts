@@ -9,7 +9,8 @@
 import { Action } from "../actions";
 import { Entity as EntityString } from "../../types";
 
-export interface Schema {
+import { CardOptions } from "../types";
+export interface Schema extends CardOptions {
   /**
    * The tile card gives you a quick overview of your entity. The card allows you to toggle the entity and show the more info dialog.
    * https://www.home-assistant.io/dashboards/tile/

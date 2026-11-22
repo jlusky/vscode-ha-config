@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Carbon consumed gauge Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-solar-consumed-gauge-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The carbon consumed gauge card represents how much of the energy consumed by your home was generated using non-fossil fuels like solar, wind and nuclear.
    * https://www.home-assistant.io/lovelace/energy/#carbon-consumed-gauge

@@ -7,12 +7,12 @@
  */
 
 import { Action } from "../actions";
-import { EntityConfig, ViewLayout } from "../types";
+import { EntityConfig, ViewLayout, CardOptions } from "../types";
 import { Entity as EntityString, PositiveInteger } from "../../types";
 
 type Entity = EntityString | GlanceEntityConfig;
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Glance card is useful to group multiple sensors in a compact overview.
    * https://www.home-assistant.io/lovelace/glance/

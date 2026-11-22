@@ -2,8 +2,10 @@
  * Lovelace Entity Button Card
  * Source: https://github.com/home-assistant/frontend/edit/dev/src/panels/lovelace/cards/hui-entity-button-card.ts
  */
+import { CardOptions } from "../types";
 
-export interface Schema {
+
+export interface Schema extends CardOptions {
   /**
    * DEPRECATED.
    * The entity-button card has been replaced by the button card.

@@ -7,9 +7,9 @@
  */
 
 import { PlantEntity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Plant Status card is for all the lovely botanists out there.
    * https://www.home-assistant.io/lovelace/plant-status/

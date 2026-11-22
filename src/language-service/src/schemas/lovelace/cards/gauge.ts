@@ -7,9 +7,9 @@
  */
 
 import { Entity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Gauge card is a basic card that allows visually seeing sensor data.
    * https://www.home-assistant.io/lovelace/gauge/

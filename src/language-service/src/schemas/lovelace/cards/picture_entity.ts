@@ -8,9 +8,9 @@
 
 import { Action } from "../actions";
 import { CameraEntity, Entity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Picture Entity card displays an entity in the form of an image. Instead of images from URL, it can also show the picture of camera entities.
    * https://www.home-assistant.io/lovelace/picture-entity/
