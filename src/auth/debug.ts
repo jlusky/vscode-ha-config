@@ -223,13 +223,23 @@ export async function testHomeAssistantConnection(
       
       const requestLib = apiUrl.protocol === "https:" ? https : http;
       
+      // Set once the whole /api/ response has arrived. A connection closed before then must
+      // settle the promise, or the command would wait forever.
+      let responseComplete = false;
+
       const req = requestLib.request(apiUrl, options, (res) => {
         let data = "";
         res.on("data", (chunk) => {
           data += chunk;
         });
-        
+
+        // An aborted response reports its error here, not on the request
+        res.on("error", (error) => {
+          reject(error);
+        });
+
         res.on("end", () => {
+          responseComplete = true;
           if (res.statusCode === 200) {
             let parsedData: any;
             try {
@@ -280,7 +290,10 @@ export async function testHomeAssistantConnection(
                   configRes.on("data", (chunk) => {
                     configData += chunk;
                   });
-                  
+                  configRes.on("error", () => {
+                    // Settled by the request's close handler below
+                  });
+
                   configRes.on("end", () => {
                     if (configRes.statusCode === 200) {
                       try {
@@ -321,30 +334,28 @@ export async function testHomeAssistantConnection(
                   });
                 });
                 
-                configReq.on("error", () => {
-                  // If the config API request fails, just return the original data
-                  resolve({ 
-                    success: true, 
-                    message: "API connection successful", 
-                    data: { 
-                      ...parsedData,
-                      version: version
-                    } 
-                  });
-                });
-                
-                // The version is optional: if /api/config hasn't finished by the deadline,
-                // report the successful /api/ response rather than waiting forever. This is
-                // elapsed time, so a server that keeps trickling data can't extend it.
-                const configDeadline = setTimeout(() => {
-                  configReq.destroy();
+                // The version is optional: whenever /api/config fails, is cut off or is too
+                // slow, report the successful /api/ response. After a normal response this
+                // does nothing, because the promise has already settled.
+                const resolveWithApiData = () =>
                   resolve({
                     success: true,
                     message: "API connection successful",
                     data: { ...parsedData, version: version },
                   });
+
+                configReq.on("error", resolveWithApiData);
+
+                // An elapsed-time deadline, so a server that keeps trickling data can't
+                // extend it
+                const configDeadline = setTimeout(() => {
+                  configReq.destroy();
+                  resolveWithApiData();
                 }, CONFIG_REQUEST_TIMEOUT_MS);
-                configReq.on("close", () => clearTimeout(configDeadline));
+                configReq.on("close", () => {
+                  clearTimeout(configDeadline);
+                  resolveWithApiData();
+                });
 
                 configReq.end();
               } else {
@@ -384,7 +395,16 @@ export async function testHomeAssistantConnection(
         error.code = "ETIMEDOUT";
         req.destroy(error);
       }, API_REQUEST_TIMEOUT_MS);
-      req.on("close", () => clearTimeout(deadline));
+      req.on("close", () => {
+        clearTimeout(deadline);
+        if (!responseComplete) {
+          const error: NodeJS.ErrnoException = new Error(
+            "The connection closed before the whole response arrived",
+          );
+          error.code = "ECONNRESET";
+          reject(error);
+        }
+      });
 
       req.end();
     } catch (error) {

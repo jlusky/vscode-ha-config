@@ -830,7 +830,9 @@ export class HaConnection implements IHaConnection {
   }
 
   private getHassEntityRegistryInternal = async (): Promise<HassEntityRegistry> => {
-    if (this.hassEntityRegistry !== undefined) {
+    // The cache is only kept current while the update subscription is active. If setting it
+    // up failed, retry it and fetch the registry again instead of serving stale data.
+    if (this.hassEntityRegistry !== undefined && this.entityRegistrySubscription) {
       return this.hassEntityRegistry;
     }
 
@@ -1363,6 +1365,8 @@ export class HaConnection implements IHaConnection {
         });
       this.entityRegistrySubscription = undefined;
     }
+    // Without the subscription the registry can't be kept current
+    this.hassEntityRegistry = undefined as any;
 
     // Clear caches to release memory immediately on disconnect
     this.currentEntitiesCache = undefined;
