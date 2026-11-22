@@ -1803,11 +1803,61 @@ interface TargetIds {
 
 /**
  * The entities, devices, areas, floors or labels an integration-provided trigger or condition applies to.
- * Source: TARGET_FIELDS in https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/config_validation.py
+ * An `exclude` block needs at least one non-empty entity_id, device_id, area_id, floor_id or
+ * label_id to exclude from: Home Assistant rejects a target with only `exclude`.
+ * Source: TARGET_FIELDS and exclude_requires_target in https://github.com/home-assistant/core/blob/dev/homeassistant/helpers/config_validation.py
  */
-export interface Target extends TargetIds {
+export type Target =
+  | TargetIds
+  | ExcludeFromEntities
+  | ExcludeFromDevices
+  | ExcludeFromAreas
+  | ExcludeFromFloors
+  | ExcludeFromLabels;
+
+interface TargetWithExclude extends TargetIds {
   /**
    * Entities, devices, areas, floors or labels to leave out of the target.
    */
-  exclude?: TargetIds;
+  exclude: TargetIds;
+}
+
+interface ExcludeFromEntities extends TargetWithExclude {
+  /**
+   * The entity (or entities) to target, and exclude from.
+   * @minItems 1
+   */
+  entity_id: TargetEntities;
+}
+
+interface ExcludeFromDevices extends TargetWithExclude {
+  /**
+   * The device (or devices) to target, and exclude from.
+   * @minItems 1
+   */
+  device_id: string | string[];
+}
+
+interface ExcludeFromAreas extends TargetWithExclude {
+  /**
+   * The area (or areas) to target, and exclude from.
+   * @minItems 1
+   */
+  area_id: Area | Area[];
+}
+
+interface ExcludeFromFloors extends TargetWithExclude {
+  /**
+   * The floor (or floors) to target, and exclude from.
+   * @minItems 1
+   */
+  floor_id: Floor | Floor[];
+}
+
+interface ExcludeFromLabels extends TargetWithExclude {
+  /**
+   * The label (or labels) to target, and exclude from.
+   * @minItems 1
+   */
+  label_id: Label | Label[];
 }
