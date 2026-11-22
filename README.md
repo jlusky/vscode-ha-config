@@ -59,6 +59,43 @@ Snippets allow you to create commonly used data structures very quickly.
 
 Commands allow you to quickly interact with Home Assistant! Find them using Cmd+shift+P and type 'Home Assistant'
 
+## Ignoring validation warnings
+
+When connected, the extension warns about entities, areas, devices, floors, labels, actions and secrets that your Home Assistant instance doesn't have. To silence a warning for something that exists elsewhere, for example on another instance or not created yet, add a comment:
+
+```yaml
+# homeassistant:ignore light.remote_one, light.remote_two
+
+automation:
+  - alias: Example
+    triggers:
+      - trigger: state
+        entity_id: light.remote_one # silenced by the ignore at the top
+
+      - trigger: state
+        entity_id: light.staging # homeassistant:disable-line
+
+      # homeassistant:disable-next-line
+      - trigger: state
+        entity_id: light.not_created_yet
+
+    # homeassistant:disable
+    conditions:
+      - condition: state
+        entity_id: light.only_on_remote
+        state: "on"
+    # homeassistant:enable
+```
+
+| Comment | Silences |
+| --- | --- |
+| `# homeassistant:ignore <id>, <id>, …` | The listed IDs, anywhere in the file |
+| `# homeassistant:disable-line` | Every warning on the same line |
+| `# homeassistant:disable-next-line` | Every warning on the next line |
+| `# homeassistant:disable` … `# homeassistant:enable` | Every warning between them, or to the end of the file without `enable` |
+
+These comments only silence the warnings above. Schema errors, such as an unknown option, are still reported.
+
 ## Render templates
 
 Evaluate jinja templates via Home Assistant's API and see how they would render.
