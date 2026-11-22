@@ -169,4 +169,14 @@ suite("Completion property lookup across comments and blank lines", () => {
       null,
     );
   });
+
+  test("a blank line after a list starts a new key, not a list item", () => {
+    for (const indent of ["", "  "]) {
+      assert.strictEqual(
+        findProperty(["target:", "  entity_id:", "    - light.kitchen", indent]),
+        null,
+        `cursor after ${JSON.stringify(indent)}`,
+      );
+    }
+  });
 });
