@@ -333,16 +333,18 @@ export async function testHomeAssistantConnection(
                   });
                 });
                 
-                // The version is optional: if /api/config doesn't answer, report the
-                // successful /api/ response rather than waiting forever
-                configReq.setTimeout(CONFIG_REQUEST_TIMEOUT_MS, () => {
+                // The version is optional: if /api/config hasn't finished by the deadline,
+                // report the successful /api/ response rather than waiting forever. This is
+                // elapsed time, so a server that keeps trickling data can't extend it.
+                const configDeadline = setTimeout(() => {
                   configReq.destroy();
                   resolve({
                     success: true,
                     message: "API connection successful",
                     data: { ...parsedData, version: version },
                   });
-                });
+                }, CONFIG_REQUEST_TIMEOUT_MS);
+                configReq.on("close", () => clearTimeout(configDeadline));
 
                 configReq.end();
               } else {
@@ -373,13 +375,16 @@ export async function testHomeAssistantConnection(
         reject(error);
       });
 
-      req.setTimeout(API_REQUEST_TIMEOUT_MS, () => {
+      // An elapsed-time deadline from the start of the request, covering the connection and
+      // the whole response
+      const deadline = setTimeout(() => {
         const error: NodeJS.ErrnoException = new Error(
-          `No response after ${API_REQUEST_TIMEOUT_MS / 1000} seconds`,
+          `No complete response after ${API_REQUEST_TIMEOUT_MS / 1000} seconds`,
         );
         error.code = "ETIMEDOUT";
         req.destroy(error);
-      });
+      }, API_REQUEST_TIMEOUT_MS);
+      req.on("close", () => clearTimeout(deadline));
 
       req.end();
     } catch (error) {

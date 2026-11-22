@@ -160,6 +160,7 @@ export class HaConnection implements IHaConnection {
   // Track unsubscribe functions to prevent memory leaks
   private unsubscribeEntities: (() => void) | undefined;
   private unsubscribeServices: (() => void) | undefined;
+  private entityRegistrySubscription: Promise<(() => Promise<void>) | undefined> | undefined;
 
   // Track the last successful configuration to avoid unnecessary reconnections
   private lastSuccessfulConfig: {
@@ -812,9 +813,6 @@ export class HaConnection implements IHaConnection {
               } else {
                 console.log(`${Math.abs(diff)} entities have been removed from Home Assistant (total: ${entityCount})`);
               }
-              // Entities appear or disappear when they're added, removed, enabled or
-              // disabled. Fetch the registry again so its disabled_by values are current.
-              this.hassEntityRegistry = undefined as any;
             }
             this.lastEntityCount = entityCount;
           }
@@ -837,33 +835,46 @@ export class HaConnection implements IHaConnection {
     }
 
     await this.createConnection();
+    const connection = this.connection;
+    if (!connection) {
+      throw new Error("Not connected to Home Assistant");
+    }
 
-    this.hassEntityRegistry = new Promise<HassEntityRegistry>(
-      // eslint-disable-next-line no-async-promise-executor
-      async (resolve, reject) => {
-        if (!this.connection) {
-          return reject();
+    // Fetch the registry again after any change to it, such as an entity being disabled,
+    // enabled or removed, so disabled_by values stay current
+    if (!this.entityRegistrySubscription) {
+      this.entityRegistrySubscription = connection
+        .subscribeEvents(() => {
+          this.hassEntityRegistry = undefined as any;
+        }, "entity_registry_updated")
+        .catch((error): undefined => {
+          console.log("Could not subscribe to entity registry updates:", error);
+          this.entityRegistrySubscription = undefined;
+          return undefined;
+        });
+    }
+
+    const registry = connection
+      .sendMessagePromise<HassEntityRegistryEntry[]>({
+        type: "config/entity_registry/list",
+      })
+      .then((entityEntries) => {
+        console.log(`Got ${entityEntries.length} entity registry entries from Home Assistant`);
+        const repacked_entities: HassEntityRegistry = {};
+        entityEntries.forEach((entry) => {
+          repacked_entities[entry.entity_id] = entry;
+        });
+        return repacked_entities;
+      })
+      .catch((error) => {
+        // Let callers fall back, and try again on the next request
+        if (this.hassEntityRegistry === registry) {
+          this.hassEntityRegistry = undefined as any;
         }
-        this.connection
-          ?.sendMessagePromise<HassEntityRegistryEntry[]>({
-            type: "config/entity_registry/list",
-          })
-          .then((entityEntries) => {
-            console.log(`Got ${entityEntries.length} entity registry entries from Home Assistant`);
-            const repacked_entities: HassEntityRegistry = {};
-            entityEntries.forEach((entry) => {
-              repacked_entities[entry.entity_id] = entry;
-            });
-            return resolve(repacked_entities);
-          })
-          .catch((error) => {
-            // Let callers fall back, and try again on the next request
-            this.hassEntityRegistry = undefined as any;
-            reject(error);
-          });
-      },
-    );
-    return this.hassEntityRegistry;
+        throw error;
+      });
+    this.hassEntityRegistry = registry;
+    return registry;
   };
 
   public async getHassEntityRegistry(): Promise<HassEntityRegistry> {
@@ -1343,6 +1354,14 @@ export class HaConnection implements IHaConnection {
     if (this.unsubscribeServices) {
       this.unsubscribeServices();
       this.unsubscribeServices = undefined;
+    }
+    if (this.entityRegistrySubscription) {
+      void this.entityRegistrySubscription
+        .then((unsubscribe) => unsubscribe?.())
+        .catch(() => {
+          // The connection is closing anyway
+        });
+      this.entityRegistrySubscription = undefined;
     }
 
     // Clear caches to release memory immediately on disconnect
