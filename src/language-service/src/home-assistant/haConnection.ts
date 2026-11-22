@@ -372,6 +372,9 @@ export class HaConnection implements IHaConnection {
 
     this.connection.addEventListener("disconnected", () => {
       console.warn("Lost connection with Home Assistant");
+      // Registry changes made while disconnected send no event, and the subscription is
+      // restored on reconnect without one, so fetch the registry again after reconnecting
+      this.hassEntityRegistry = undefined as any;
     });
 
     this.connection.addEventListener("reconnect-error", (data) => {
