@@ -2763,7 +2763,20 @@ export class HomeAssistantLanguageService {
         lineOffsets[currentLine + 1] !== undefined
           ? lineOffsets[currentLine + 1] - 1
           : document.getText().length;
-      const thisLine = document.getText().substring(start, end);
+      // Drop a trailing comment ("- light.kitchen # Kitchen") so it doesn't hide the list
+      // item from the check below. A "#" without whitespace before it ("a#b") is kept.
+      const thisLine = document
+        .getText()
+        .substring(start, end)
+        .replace(/\s+#.*$/, "");
+
+      // Blank lines and full-line comments, such as "# === Ground floor ===" section
+      // headers, don't end a list: keep walking up to the key that owns it
+      const trimmedLine = thisLine.trim();
+      if (trimmedLine === "" || trimmedLine.startsWith("#")) {
+        currentLine -= 1;
+        continue;
+      }
 
       const isOtherItemInList = thisLine.match(
         /-\s*([-"\w]+)?(\.)?([-"\w]+?)?\s*$/,
