@@ -63,6 +63,12 @@ class MockHaConnection implements IHaConnection {
     }
   };
 
+  private mockEntityRegistry: any = {};
+
+  setEntityRegistry(entityRegistry: any): void {
+    this.mockEntityRegistry = entityRegistry;
+  }
+
   async tryConnect(): Promise<void> {
     // Mock implementation
   }
@@ -108,7 +114,7 @@ class MockHaConnection implements IHaConnection {
   }
 
   async getHassEntityRegistry(): Promise<any> {
-    return {};
+    return this.mockEntityRegistry;
   }
 
   async getHassServices(): Promise<any> {
@@ -232,6 +238,67 @@ group:
         `Known entity '${knownEntity}' should not generate a diagnostic`
       );
     }
+  });
+
+  test("Entity validation identifies disabled entities", async () => {
+    mockConnection.setEntityRegistry({
+      "cover.disabled_cover": {
+        entity_id: "cover.disabled_cover",
+        disabled_by: "user",
+      },
+    });
+
+    const document = TextDocument.create(
+      "file:///test-disabled-entity.yaml",
+      "yaml",
+      1,
+      "entity_id: cover.disabled_cover\n",
+    );
+
+    const diagnostics = await languageService.getDiagnostics(document);
+    const entityDiagnostics = diagnostics.filter(
+      (diagnostic) => diagnostic.source === "home-assistant",
+    );
+
+    assert.strictEqual(entityDiagnostics.length, 1);
+    assert.strictEqual(entityDiagnostics[0].code, "disabled-entity");
+    assert.strictEqual(
+      entityDiagnostics[0].message,
+      "Entity 'cover.disabled_cover' is disabled in your Home Assistant instance",
+    );
+
+    mockConnection.setEntityRegistry({});
+  });
+
+  test("Entity validation reports enabled registry entries without a state as unknown", async () => {
+    mockConnection.setEntityRegistry({
+      "cover.enabled_cover": {
+        entity_id: "cover.enabled_cover",
+        disabled_by: null,
+      },
+      "cover.no_disabled_by": {
+        entity_id: "cover.no_disabled_by",
+      },
+    });
+
+    const document = TextDocument.create(
+      "file:///test-enabled-registry-entity.yaml",
+      "yaml",
+      1,
+      "entity_id:\n  - cover.enabled_cover\n  - cover.no_disabled_by\n",
+    );
+
+    const diagnostics = await languageService.getDiagnostics(document);
+    const entityDiagnostics = diagnostics.filter(
+      (diagnostic) => diagnostic.source === "home-assistant",
+    );
+
+    assert.deepStrictEqual(
+      entityDiagnostics.map((diagnostic) => diagnostic.code),
+      ["unknown-entity", "unknown-entity"],
+    );
+
+    mockConnection.setEntityRegistry({});
   });
 
   test("Entity validation skips templates and secrets", async () => {

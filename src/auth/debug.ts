@@ -192,6 +192,9 @@ export async function debugAuthSettings(context: vscode.ExtensionContext): Promi
   }
 }
 
+const API_REQUEST_TIMEOUT_MS = 15000;
+const CONFIG_REQUEST_TIMEOUT_MS = 5000;
+
 /**
  * Test connection to Home Assistant API
  * @param url The URL to connect to
@@ -220,16 +223,44 @@ export async function testHomeAssistantConnection(
       
       const requestLib = apiUrl.protocol === "https:" ? https : http;
       
+      // Set once the whole /api/ response has arrived. A connection closed before then must
+      // settle the promise, or the command would wait forever.
+      let responseComplete = false;
+
       const req = requestLib.request(apiUrl, options, (res) => {
         let data = "";
         res.on("data", (chunk) => {
           data += chunk;
         });
-        
+
+        // An aborted response reports its error here, not on the request
+        res.on("error", (error) => {
+          reject(error);
+        });
+
         res.on("end", () => {
+          responseComplete = true;
           if (res.statusCode === 200) {
+            let parsedData: any;
             try {
-              const parsedData = JSON.parse(data);
+              parsedData = JSON.parse(data);
+            } catch {
+              // A wrong URL or a proxy page can answer 200 with HTML
+              resolve({
+                success: false,
+                message: "The URL answered, but not with Home Assistant's API. Check the URL and any proxy in front of Home Assistant.",
+              });
+              return;
+            }
+            // Home Assistant's /api/ endpoint answers {"message": "API running."}
+            if (parsedData?.message !== "API running.") {
+              resolve({
+                success: false,
+                message: `Unexpected API response: ${parsedData?.message ?? "no message"}`,
+              });
+              return;
+            }
+            try {
               
               // Extract version information from the Home Assistant API response
               // The version can be in different locations based on the API
@@ -259,7 +290,10 @@ export async function testHomeAssistantConnection(
                   configRes.on("data", (chunk) => {
                     configData += chunk;
                   });
-                  
+                  configRes.on("error", () => {
+                    // Settled by the request's close handler below
+                  });
+
                   configRes.on("end", () => {
                     if (configRes.statusCode === 200) {
                       try {
@@ -300,18 +334,29 @@ export async function testHomeAssistantConnection(
                   });
                 });
                 
-                configReq.on("error", () => {
-                  // If the config API request fails, just return the original data
-                  resolve({ 
-                    success: true, 
-                    message: "API connection successful", 
-                    data: { 
-                      ...parsedData,
-                      version: version
-                    } 
+                // The version is optional: whenever /api/config fails, is cut off or is too
+                // slow, report the successful /api/ response. After a normal response this
+                // does nothing, because the promise has already settled.
+                const resolveWithApiData = () =>
+                  resolve({
+                    success: true,
+                    message: "API connection successful",
+                    data: { ...parsedData, version: version },
                   });
+
+                configReq.on("error", resolveWithApiData);
+
+                // An elapsed-time deadline, so a server that keeps trickling data can't
+                // extend it
+                const configDeadline = setTimeout(() => {
+                  configReq.destroy();
+                  resolveWithApiData();
+                }, CONFIG_REQUEST_TIMEOUT_MS);
+                configReq.on("close", () => {
+                  clearTimeout(configDeadline);
+                  resolveWithApiData();
                 });
-                
+
                 configReq.end();
               } else {
                 // We already have the version, just return the data
@@ -325,8 +370,9 @@ export async function testHomeAssistantConnection(
                 });
               }
             } catch (e) {
-              console.log("Failed to parse JSON response:", e.message);
-              resolve({ success: true, message: "API connection successful, but response wasn't valid JSON" });
+              // The API answered: only the optional version lookup failed
+              console.log("Failed to look up the Home Assistant version:", e.message);
+              resolve({ success: true, message: "API connection successful", data: parsedData });
             }
           } else if (res.statusCode === 401) {
             resolve({ success: false, message: "Authentication failed (401 Unauthorized)" });
@@ -339,7 +385,27 @@ export async function testHomeAssistantConnection(
       req.on("error", (error) => {
         reject(error);
       });
-      
+
+      // An elapsed-time deadline from the start of the request, covering the connection and
+      // the whole response
+      const deadline = setTimeout(() => {
+        const error: NodeJS.ErrnoException = new Error(
+          `No complete response after ${API_REQUEST_TIMEOUT_MS / 1000} seconds`,
+        );
+        error.code = "ETIMEDOUT";
+        req.destroy(error);
+      }, API_REQUEST_TIMEOUT_MS);
+      req.on("close", () => {
+        clearTimeout(deadline);
+        if (!responseComplete) {
+          const error: NodeJS.ErrnoException = new Error(
+            "The connection closed before the whole response arrived",
+          );
+          error.code = "ECONNRESET";
+          reject(error);
+        }
+      });
+
       req.end();
     } catch (error) {
       reject(error);

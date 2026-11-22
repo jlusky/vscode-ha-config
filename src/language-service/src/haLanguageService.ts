@@ -24,7 +24,10 @@ import { DeviceCompletionContribution } from "./completionHelpers/deviceIds";
 import { EntityIdCompletionContribution } from "./completionHelpers/entityIds";
 import { FloorCompletionContribution } from "./completionHelpers/floors";
 import { LabelCompletionContribution } from "./completionHelpers/labels";
-import { HaConnection } from "./home-assistant/haConnection";
+import {
+  HaConnection,
+  HassEntityRegistry,
+} from "./home-assistant/haConnection";
 import { ServicesCompletionContribution } from "./completionHelpers/services";
 import { DomainCompletionContribution } from "./completionHelpers/domains";
 import { UuidCompletionContribution } from "./completionHelpers/uuids";
@@ -328,8 +331,16 @@ export class HomeAssistantLanguageService {
     const diagnostics: Diagnostic[] = [];
     
     try {
-      // Get all entities from Home Assistant
-      const entities = await this.haConnection.getHassEntities();
+      // Fetch the live state and entity registry caches concurrently.
+      const [entities, entityRegistry] = await Promise.all([
+        this.haConnection.getHassEntities(),
+        this.haConnection.getHassEntityRegistry().catch((error): HassEntityRegistry => {
+          // A registry lookup improves the diagnostic but must not prevent
+          // unknown-entity validation when the registry is unavailable.
+          console.log("Could not fetch the Home Assistant entity registry:", error);
+          return {};
+        }),
+      ]);
       if (!entities) {
         // If we can't get entities (e.g., not connected), don't validate
         console.log("Entity validation skipped: No entities available from Home Assistant");
@@ -338,6 +349,20 @@ export class HomeAssistantLanguageService {
 
       const entityIds = Object.keys(entities);
       console.log(`Entity validation: Found ${entityIds.length} entities from Home Assistant`);
+      const getEntityDiagnosticDetails = (entityId: string) => {
+        const entityRegistryEntry = entityRegistry[entityId];
+        if (entityRegistryEntry?.disabled_by) {
+          return {
+            code: "disabled-entity",
+            message: `Entity '${entityId}' is disabled in your Home Assistant instance`,
+          };
+        }
+
+        return {
+          code: "unknown-entity",
+          message: `Entity '${entityId}' does not exist in your Home Assistant instance`,
+        };
+      };
       
       const text = document.getText();
       const lines = text.split("\n");
@@ -382,6 +407,7 @@ export class HomeAssistantLanguageService {
               console.log(`Entity validation: Found unknown entity '${cleanEntityValue}' at line ${lineIndex + 1}`);
               const startColumn = match.index! + match[0].indexOf(entityValue);
               const endColumn = startColumn + entityValue.length;
+              const diagnosticDetails = getEntityDiagnosticDetails(cleanEntityValue);
               
               const diagnostic: Diagnostic = {
                 severity: 2, // Warning
@@ -391,9 +417,9 @@ export class HomeAssistantLanguageService {
                   lineIndex,
                   endColumn,
                 ),
-                message: `Entity '${cleanEntityValue}' does not exist in your Home Assistant instance`,
+                message: diagnosticDetails.message,
                 source: "home-assistant",
-                code: "unknown-entity",
+                code: diagnosticDetails.code,
               };
               
               diagnostics.push(diagnostic);
@@ -426,6 +452,7 @@ export class HomeAssistantLanguageService {
                 const entityStartInArray = entitiesInArray.indexOf(entityInArray);
                 const startColumn = arrayMatch.index! + arrayMatch[0].indexOf("[") + 1 + entityStartInArray;
                 const endColumn = startColumn + entityInArray.length;
+                const diagnosticDetails = getEntityDiagnosticDetails(cleanEntityValue);
                 
                 const diagnostic: Diagnostic = {
                   severity: 2, // Warning
@@ -435,9 +462,9 @@ export class HomeAssistantLanguageService {
                     lineIndex,
                     endColumn,
                   ),
-                  message: `Entity '${cleanEntityValue}' does not exist in your Home Assistant instance`,
+                  message: diagnosticDetails.message,
                   source: "home-assistant",
-                  code: "unknown-entity",
+                  code: diagnosticDetails.code,
                 };
                 
                 diagnostics.push(diagnostic);
@@ -474,6 +501,7 @@ export class HomeAssistantLanguageService {
               if (!entityIds.includes(entityValue)) {
                 const startColumn = entityMatch.index! + entityMatch[0].indexOf(entityValue);
                 const endColumn = startColumn + entityValue.length;
+                const diagnosticDetails = getEntityDiagnosticDetails(entityValue);
                 
                 const diagnostic: Diagnostic = {
                   severity: 2, // Warning
@@ -483,9 +511,9 @@ export class HomeAssistantLanguageService {
                     lineIndex,
                     endColumn,
                   ),
-                  message: `Entity '${entityValue}' does not exist in your Home Assistant instance`,
+                  message: diagnosticDetails.message,
                   source: "home-assistant",
-                  code: "unknown-entity",
+                  code: diagnosticDetails.code,
                 };
                 
                 diagnostics.push(diagnostic);
