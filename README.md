@@ -6,7 +6,7 @@
 
 # Getting started
 
-1. Install via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=blown.vscode-ha-config)
+1. Install via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=blown.vscode-ha-config), or from [Open VSX](https://open-vsx.org/extension/blown/vscode-ha-config) for VS Code–compatible editors such as VSCodium
 
 2. Open your (local copy of the) Home Assistant Configuration with VS Code
 

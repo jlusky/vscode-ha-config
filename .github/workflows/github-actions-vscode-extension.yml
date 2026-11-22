@@ -2,7 +2,7 @@ name: VS Code Extension
 
 # Push runs only for dev; feature branches are tested once, through their pull request,
 # instead of once for the push and again for the PR. Publishing a GitHub release builds,
-# tests and then publishes that version to the VS Code Marketplace.
+# tests and then publishes that version to the VS Code Marketplace and Open VSX.
 on:
   push:
     branches: [dev]
@@ -182,6 +182,19 @@ jobs:
         # A rerun after a failed release upload must not fail on the already-published version
         # Needs a Trusted Publishing policy for this repository and workflow on the publisher
         run: npx vsce publish --oidc --packagePath vscode-ha-config.vsix --skip-duplicate
+
+      - name: 🚀 Open VSX Publish
+        # Publishes the same .vsix to open-vsx.org under the "blown" namespace (the publisher
+        # in package.json). Open VSX has no Trusted Publishing, so this uses an access token
+        # stored as the OVSX_PAT repository secret.
+        run: |
+          if [ -z "$OVSX_PAT" ]; then
+            echo "::error::The OVSX_PAT repository secret is not set"
+            exit 1
+          fi
+          npx ovsx publish --packagePath vscode-ha-config.vsix --skip-duplicate
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: 📎 Attach the .vsix to the release
         run: gh release upload "$TAG" vscode-ha-config.vsix --clobber
