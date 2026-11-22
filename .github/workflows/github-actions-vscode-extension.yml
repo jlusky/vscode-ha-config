@@ -137,8 +137,9 @@ jobs:
     permissions:
       # Attach the .vsix to the release
       contents: write
-      # Marketplace Trusted Publishing: vsce exchanges GitHub's OIDC token for a
-      # short-lived Marketplace credential, so there is no publishing secret
+      # Trusted Publishing for both the Marketplace (vsce) and Open VSX (ovsx): each
+      # exchanges GitHub's OIDC token for a short-lived credential, so there are no
+      # publishing secrets
       id-token: write
     env:
       TAG: ${{ github.event.release.tag_name }}
@@ -185,16 +186,10 @@ jobs:
 
       - name: 🚀 Open VSX Publish
         # Publishes the same .vsix to open-vsx.org under the "blown" namespace (the publisher
-        # in package.json). Open VSX has no Trusted Publishing, so this uses an access token
-        # stored as the OVSX_PAT repository secret.
-        run: |
-          if [ -z "$OVSX_PAT" ]; then
-            echo "::error::The OVSX_PAT repository secret is not set"
-            exit 1
-          fi
-          npx ovsx publish --packagePath vscode-ha-config.vsix --skip-duplicate
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        # in package.json). Trusted Publishing: ovsx exchanges GitHub's OIDC token for a
+        # short-lived Open VSX token, so there is no publishing secret.
+        # Needs a trusted publisher for this repository and workflow on the namespace
+        run: npx ovsx publish --trusted-publishing --packagePath vscode-ha-config.vsix --skip-duplicate
 
       - name: 📎 Attach the .vsix to the release
         run: gh release upload "$TAG" vscode-ha-config.vsix --clobber
