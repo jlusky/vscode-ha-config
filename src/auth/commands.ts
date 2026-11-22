@@ -100,46 +100,58 @@ async function setToken(context: vscode.ExtensionContext): Promise<void> {
     return;
   }
   
-  // Save the instance URL with the token, unless it's already the stored one
-  if (instanceUrl !== storedUrl) {
-    try {
-      // Store in SecretStorage
-      await AuthManager.storeUrl(context, instanceUrl);
-      
-      // Remove from settings if it exists
-      const config = vscode.workspace.getConfiguration("vscode-ha-config");
-      if (config.get("hostUrl") !== undefined) {
-        await config.update("hostUrl", undefined, vscode.ConfigurationTarget.Global);
-      }
-      
-      vscode.window.showInformationMessage(`Home Assistant instance URL has been securely stored: ${instanceUrl}`);
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to store Home Assistant instance URL: ${error.message}`);
-      return; // Don't proceed to token if URL failed
-    }
-  }
-
+  // Ask for the token before storing anything, so cancelling leaves the stored pair unchanged
   const token = await vscode.window.showInputBox({
     prompt: "Enter your Home Assistant Long-Lived Access Token",
     password: true,
     placeHolder: "eyJhbGci..."
   });
-  
-  if (token) {
+
+  if (!token) {
+    vscode.window.showWarningMessage("No token was entered. The stored URL and token are unchanged.");
+    return;
+  }
+
+  // Store the URL and token together. If the token can't be stored, put the previous URL
+  // back, so the old token is never left paired with the new URL.
+  const urlChanged = instanceUrl !== storedUrl;
+  try {
+    if (urlChanged) {
+      await AuthManager.storeUrl(context, instanceUrl);
+    }
     try {
       await AuthManager.storeToken(context, token);
-      // Remove from settings if it exists
-      const config = vscode.workspace.getConfiguration("vscode-ha-config");
-      if (config.get("longLivedAccessToken") !== undefined) {
-        await config.update("longLivedAccessToken", undefined, vscode.ConfigurationTarget.Global);
+    } catch (tokenError) {
+      if (urlChanged) {
+        if (storedUrl) {
+          await AuthManager.storeUrl(context, storedUrl);
+        } else {
+          await AuthManager.deleteUrl(context);
+        }
       }
-      vscode.window.showInformationMessage("Home Assistant token has been securely stored.");
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to store token: ${error.message}`);
+      throw tokenError;
     }
-  } else {
-    vscode.window.showWarningMessage("No token was entered.");
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Failed to store the Home Assistant URL and token: ${error.message}. The stored URL and token are unchanged.`,
+    );
+    return;
   }
+
+  // Both are stored: remove any copies left in the user settings
+  const config = vscode.workspace.getConfiguration("vscode-ha-config");
+  if (urlChanged && config.inspect("hostUrl")?.globalValue !== undefined) {
+    await config.update("hostUrl", undefined, vscode.ConfigurationTarget.Global);
+  }
+  if (config.inspect("longLivedAccessToken")?.globalValue !== undefined) {
+    await config.update("longLivedAccessToken", undefined, vscode.ConfigurationTarget.Global);
+  }
+
+  vscode.window.showInformationMessage(
+    urlChanged
+      ? `Home Assistant instance URL (${instanceUrl}) and token have been securely stored.`
+      : "Home Assistant token has been securely stored.",
+  );
 }
 
 async function clearToken(context: vscode.ExtensionContext): Promise<void> {
