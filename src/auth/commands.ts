@@ -45,8 +45,31 @@ export async function manageAuth(context: vscode.ExtensionContext): Promise<void
 }
 
 async function setToken(context: vscode.ExtensionContext): Promise<void> {
-  // The URL currently in use, from any source
-  const currentUrl = await AuthManager.getUrl(context);
+  // This sets the stored credentials, which a workspace with its own connection doesn't use
+  if (AuthManager.usesWorkspaceCredentials()) {
+    const openSettings = "Open Workspace Settings";
+    const changeStored = "Change Stored Credentials";
+    const choice = await vscode.window.showWarningMessage(
+      "This workspace sets its own Home Assistant connection in its settings, so a stored token isn't used here. Change vscode-ha-config.hostUrl and vscode-ha-config.longLivedAccessToken in the workspace settings instead, or change the stored credentials used by other workspaces.",
+      { modal: true },
+      openSettings,
+      changeStored,
+    );
+    if (choice === openSettings) {
+      await vscode.commands.executeCommand("workbench.action.openWorkspaceSettings", {
+        query: "vscode-ha-config",
+      });
+      return;
+    }
+    if (choice !== changeStored) {
+      return;
+    }
+  }
+
+  // The URL the token will be stored with: the stored one, never a workspace setting, so the
+  // stored URL and token always belong to the same instance
+  const currentUrl = (await AuthManager.resolveShared(context, "url"))?.value;
+  const storedUrl = await AuthManager.getSecret(context, "url");
   
   // Always ask for the instance URL for verification
   const instanceUrl = await vscode.window.showInputBox({
@@ -77,8 +100,8 @@ async function setToken(context: vscode.ExtensionContext): Promise<void> {
     return;
   }
   
-  // Save the instance URL
-  if (instanceUrl !== currentUrl) {
+  // Save the instance URL with the token, unless it's already the stored one
+  if (instanceUrl !== storedUrl) {
     try {
       // Store in SecretStorage
       await AuthManager.storeUrl(context, instanceUrl);
@@ -116,17 +139,6 @@ async function setToken(context: vscode.ExtensionContext): Promise<void> {
     }
   } else {
     vscode.window.showWarningMessage("No token was entered.");
-  }
-
-  // A token or URL in the workspace settings takes priority over the stored ones
-  const overridden = [
-    AuthManager.getWorkspaceSetting("url") ? "instance URL" : undefined,
-    AuthManager.getWorkspaceSetting("token") ? "token" : undefined,
-  ].filter(Boolean);
-  if (overridden.length > 0) {
-    vscode.window.showWarningMessage(
-      `This workspace's settings also set the Home Assistant ${overridden.join(" and ")}, which take priority over the stored ones in this workspace.`,
-    );
   }
 }
 
@@ -282,7 +294,9 @@ export async function testConnection(context: vscode.ExtensionContext): Promise<
 }
 
 async function setInstanceUrl(context: vscode.ExtensionContext): Promise<void> {
-  const currentUrl = await AuthManager.getUrl(context);
+  // This changes the stored URL, never a workspace setting
+  const currentUrl = (await AuthManager.resolveShared(context, "url"))?.value;
+  const storedUrl = await AuthManager.getSecret(context, "url");
   
   const newUrl = await vscode.window.showInputBox({
     prompt: "Enter your Home Assistant instance URL",
@@ -307,7 +321,7 @@ async function setInstanceUrl(context: vscode.ExtensionContext): Promise<void> {
     }
   });
   
-  if (newUrl && newUrl !== currentUrl) {
+  if (newUrl && newUrl !== storedUrl) {
     try {
       await AuthManager.storeUrl(context, newUrl);
       // Remove from settings if it exists
@@ -315,7 +329,11 @@ async function setInstanceUrl(context: vscode.ExtensionContext): Promise<void> {
       if (config.get("hostUrl") !== undefined) {
         await config.update("hostUrl", undefined, vscode.ConfigurationTarget.Global);
       }
-      vscode.window.showInformationMessage(`Home Assistant instance URL has been securely stored: ${newUrl}`);
+      vscode.window.showInformationMessage(
+        AuthManager.usesWorkspaceCredentials()
+          ? `Home Assistant instance URL has been securely stored: ${newUrl}. This workspace sets its own connection in its settings, so it keeps using that.`
+          : `Home Assistant instance URL has been securely stored: ${newUrl}`,
+      );
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to store Home Assistant instance URL: ${error.message}`);
     }

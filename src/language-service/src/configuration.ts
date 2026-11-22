@@ -63,10 +63,13 @@ export class ConfigurationService implements IConfigurationService {
     if (incoming && typeof incoming === "object") {
       console.log("Got valid configuration object");
       
-      // Check if we have a token in the incoming configuration
-      if (incoming.longLivedAccessToken) {
-        this.token = incoming.longLivedAccessToken;
-        console.log(`Token found in configuration (length: ${this.token.length}, first 5 chars: ${this.token.substring(0, 5)}...)`);
+      // The client always sends the token and URL as a pair. An empty token clears the old
+      // one, so it's never reused with a different URL.
+      if (incoming.longLivedAccessToken !== undefined) {
+        this.token = incoming.longLivedAccessToken || undefined;
+      }
+      if (this.token) {
+        console.log(`Token found in configuration (length: ${this.token.length})`);
       } else {
         console.log("No token in incoming configuration");
       }
@@ -153,8 +156,13 @@ export class ConfigurationService implements IConfigurationService {
       console.log(`Using URL from HASS_SERVER env var: ${this.url}`);
     }
     
-    // Set token from environment if needed
-    if (!this.token && envHassToken) {
+    // Set token from environment if needed, but only for the environment's own URL (or when
+    // no URL is set yet): never send it to a URL from somewhere else
+    if (
+      !this.token &&
+      envHassToken &&
+      (!this.url || (envHassServer !== undefined && this.url === this.getUri(envHassServer)))
+    ) {
       this.token = envHassToken;
       console.log(`Using token from HASS_TOKEN env var (length: ${this.token.length})`);
     }

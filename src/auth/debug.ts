@@ -24,17 +24,21 @@ export async function debugAuthSettings(context: vscode.ExtensionContext): Promi
     ["environment", AuthManager.getEnvironment("token")],
     ["user settings (deprecated, migrated to SecretStorage)", AuthManager.getUserSetting("token")],
   ];
-  const activeUrlEntry = urlSources.find(([, value]) => value);
-  const activeTokenEntry = tokenSources.find(([, value]) => value);
-  const activeUrl = activeUrlEntry?.[1];
-  const activeToken = activeTokenEntry?.[1];
+  // The pair actually used: the URL and token always come from the same place
+  const activeUrlEntry = await AuthManager.resolve(context, "url");
+  const activeTokenEntry = await AuthManager.resolve(context, "token");
+  const activeUrl = activeUrlEntry?.value;
+  const activeToken = activeTokenEntry?.value;
 
   // Show results
   const debugPanel = vscode.window.createOutputChannel("Home Assistant Auth Debug");
   debugPanel.clear();
   debugPanel.appendLine("Home Assistant Connection Status:");
   debugPanel.appendLine("---------------------------------");
-  debugPanel.appendLine("The first source that is set is used: workspace settings, SecretStorage, environment, then user settings.");
+  debugPanel.appendLine("If the workspace settings set the URL or token, both come from the workspace settings. Otherwise the first source that is set is used: SecretStorage, environment, then user settings.");
+  if (!vscode.workspace.isTrusted) {
+    debugPanel.appendLine("This workspace isn't trusted, so its settings are ignored.");
+  }
 
   debugPanel.appendLine("\n--- Home Assistant Instance URL --- ");
   for (const [source, value] of urlSources) {
@@ -43,7 +47,7 @@ export async function debugAuthSettings(context: vscode.ExtensionContext): Promi
 
   if (activeUrlEntry) {
     debugPanel.appendLine(`Active URL: ${activeUrl}`);
-    debugPanel.appendLine(`URL source: ${activeUrlEntry[0]}`);
+    debugPanel.appendLine(`URL source: ${activeUrlEntry.source}`);
   } else {
     debugPanel.appendLine("No active URL found. Please configure the Home Assistant instance URL.");
   }
@@ -59,7 +63,7 @@ export async function debugAuthSettings(context: vscode.ExtensionContext): Promi
       ? "***" 
       : `${activeToken.substring(0, 5)}...${activeToken.substring(activeToken.length - 5)}`;
     debugPanel.appendLine(`Active token (obscured): ${obscuredToken}`);
-    debugPanel.appendLine(`Token source: ${activeTokenEntry[0]}`);
+    debugPanel.appendLine(`Token source: ${activeTokenEntry.source}`);
 
     // Check token format
     if (activeToken.startsWith("eyJ")) {

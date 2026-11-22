@@ -17,16 +17,18 @@ type CredentialKind = "token" | "url";
 /**
  * AuthManager class to handle Home Assistant tokens and Home Assistant instance URL.
  *
- * The token and URL are looked up in this order, and the first one found is used:
- * 1. Workspace or folder settings (settings.json of the open workspace). Each workspace can
- *    point at its own Home Assistant instance, and anyone who can open the configuration
- *    folder can change Home Assistant anyway.
- * 2. SecretStorage, the user's own credentials across all workspaces.
- * 3. Environment variables (HASS_TOKEN / HASS_SERVER, or SUPERVISOR_TOKEN in the add-on).
- * 4. User (global) settings that haven't been migrated to SecretStorage yet.
+ * If a trusted workspace's settings set the URL or the token, that workspace uses its own
+ * connection: both come from the workspace settings, and a missing one stays missing. The
+ * user's own token is never sent to a URL the workspace chose, or the other way round.
  *
- * Only user settings are ever migrated to SecretStorage: workspace settings belong to that
- * workspace and are left where they are.
+ * Otherwise each is looked up in this order, and the first one found is used:
+ * 1. SecretStorage, the user's own credentials across all workspaces.
+ * 2. Environment variables (HASS_TOKEN / HASS_SERVER, or SUPERVISOR_TOKEN in the add-on).
+ * 3. User (global) settings that haven't been migrated to SecretStorage yet.
+ *
+ * Workspace settings are ignored in an untrusted workspace (Restricted Mode). Only user
+ * settings are ever migrated to SecretStorage: workspace settings belong to that workspace and
+ * are left where they are.
  */
 export class AuthManager {
   private static readonly TOKEN_KEY = "home-assistant.token";
@@ -50,11 +52,21 @@ export class AuthManager {
   }
 
   /**
-   * The token or URL set in the workspace or folder settings, if any
+   * The token or URL set in the workspace settings, if any. Always undefined in an untrusted
+   * workspace, so opening a folder can't redirect the connection.
    */
   public static getWorkspaceSetting(kind: CredentialKind): string | undefined {
-    const inspection = AuthManager.inspectSetting(kind);
-    return inspection?.workspaceFolderValue || inspection?.workspaceValue || undefined;
+    if (!vscode.workspace.isTrusted) {
+      return undefined;
+    }
+    return AuthManager.inspectSetting(kind)?.workspaceValue || undefined;
+  }
+
+  /**
+   * Whether this workspace sets its own connection (URL, token or both) in its settings
+   */
+  public static usesWorkspaceCredentials(): boolean {
+    return !!(AuthManager.getWorkspaceSetting("url") || AuthManager.getWorkspaceSetting("token"));
   }
 
   /**
@@ -94,11 +106,20 @@ export class AuthManager {
     context: vscode.ExtensionContext,
     kind: CredentialKind,
   ): Promise<ResolvedCredential | undefined> {
-    const workspaceValue = AuthManager.getWorkspaceSetting(kind);
-    if (workspaceValue) {
-      return { value: workspaceValue, source: "workspace settings" };
+    if (AuthManager.usesWorkspaceCredentials()) {
+      const workspaceValue = AuthManager.getWorkspaceSetting(kind);
+      return workspaceValue ? { value: workspaceValue, source: "workspace settings" } : undefined;
     }
+    return AuthManager.resolveShared(context, kind);
+  }
 
+  /**
+   * Find the token or URL the user has set up for every workspace, ignoring workspace settings
+   */
+  public static async resolveShared(
+    context: vscode.ExtensionContext,
+    kind: CredentialKind,
+  ): Promise<ResolvedCredential | undefined> {
     const secretValue = await AuthManager.getSecret(context, kind);
     if (secretValue) {
       return { value: secretValue, source: "SecretStorage" };
@@ -232,12 +253,42 @@ export class AuthManager {
   }
 
   /**
+   * Tell the user this workspace's settings set only half of the connection, and offer to open
+   * them. The missing half is never taken from the user's own credentials.
+   */
+  public static showIncompleteWorkspaceCredentials(): void {
+    const openSettings = "Open Workspace Settings";
+    void vscode.window
+      .showWarningMessage(
+        "This workspace's settings set only part of the Home Assistant connection. Set both vscode-ha-config.hostUrl and vscode-ha-config.longLivedAccessToken in the workspace settings, or remove both to use your stored credentials.",
+        openSettings,
+      )
+      .then((selection) => {
+        if (selection === openSettings) {
+          void vscode.commands.executeCommand("workbench.action.openWorkspaceSettings", {
+            query: "vscode-ha-config",
+          });
+        }
+      });
+  }
+
+  /**
    * Get the token, asking for the instance URL and token if none is configured anywhere.
    * Migrates credentials from the user settings to SecretStorage on the way.
    * @param context Extension context
    * @returns The token or undefined if not found
    */
   public static async getTokenWithUI(context: vscode.ExtensionContext): Promise<string | undefined> {
+    // A workspace with its own connection gets both values from its settings: anything typed
+    // here would be stored for every workspace instead
+    if (AuthManager.usesWorkspaceCredentials()) {
+      const workspaceToken = await AuthManager.getToken(context);
+      if (!workspaceToken || !(await AuthManager.getUrl(context))) {
+        AuthManager.showIncompleteWorkspaceCredentials();
+      }
+      return workspaceToken;
+    }
+
     await AuthManager.migrateUrlFromSettings(context);
     let hostUrl = await AuthManager.getUrl(context);
 

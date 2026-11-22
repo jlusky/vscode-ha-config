@@ -187,16 +187,17 @@ export class AuthMiddleware {
             item["vscode-ha-config"] = {};
           }
 
+          // Always replace both values, so the server never pairs a raw workspace setting
+          // with a token from somewhere else
+          item["vscode-ha-config"].longLivedAccessToken = token ?? "";
+          item["vscode-ha-config"].hostUrl = url ?? "";
           if (token) {
             AuthMiddleware.log(`Injecting token (length: ${token.length}) into configuration`);
-            item["vscode-ha-config"].longLivedAccessToken = token;
           } else {
-            AuthMiddleware.log("WARNING: No token found in workspace settings, SecretStorage, environment or user settings for configuration item");
+            AuthMiddleware.log("WARNING: No token found for configuration item");
           }
-
           if (url) {
             AuthMiddleware.log(`Injecting URL (${url}) into configuration`);
-            item["vscode-ha-config"].hostUrl = url;
           }
 
           await this.migrateUserSettings();
@@ -228,16 +229,17 @@ export class AuthMiddleware {
         const token = await AuthManager.getToken(this.context);
         const url = await AuthManager.getUrl(this.context);
 
+        // Always replace both values, so the server never pairs a raw workspace setting
+        // with a token from somewhere else
+        notification.settings["vscode-ha-config"].longLivedAccessToken = token ?? "";
+        notification.settings["vscode-ha-config"].hostUrl = url ?? "";
         if (token) {
           AuthMiddleware.log(`Injecting token (length: ${token.length}) into notification`);
-          notification.settings["vscode-ha-config"].longLivedAccessToken = token;
         } else {
-          AuthMiddleware.log("WARNING: No token found in workspace settings, SecretStorage, environment or user settings for notification");
+          AuthMiddleware.log("WARNING: No token found for notification");
         }
-
         if (url) {
           AuthMiddleware.log(`Injecting URL (${url}) into notification`);
-          notification.settings["vscode-ha-config"].hostUrl = url;
         }
 
         await this.migrateUserSettings();

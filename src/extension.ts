@@ -103,7 +103,8 @@ export async function activate(
         return {
           "vscode-ha-config": {
             longLivedAccessToken: token || "",
-            hostUrl: url || config.get<string>("hostUrl") || "",
+            // Only the URL that belongs with the token: never a raw workspace setting
+            hostUrl: url || "",
             ignoreCertificates: !!config.get<boolean>("ignoreCertificates"),
             devMockConnection: !!config.get<boolean>("devMockConnection"),
           }
@@ -551,8 +552,22 @@ export async function activate(
     })
   );
 
+  // A workspace's own connection settings only apply once the workspace is trusted
+  context.subscriptions.push(
+    vscode.workspace.onDidGrantWorkspaceTrust(async () => {
+      if (AuthManager.usesWorkspaceCredentials()) {
+        await vscode.workspace
+          .getConfiguration("vscode-ha-config")
+          .update("triggerConfigRefresh", Date.now(), vscode.ConfigurationTarget.Global);
+      }
+      statusBar.checkConnectionStatus();
+    }),
+  );
+
   // Initial check for credentials
-  if (!(await AuthManager.hasCredentials(context))) {
+  if (AuthManager.usesWorkspaceCredentials() && !(await AuthManager.hasCredentials(context))) {
+    AuthManager.showIncompleteWorkspaceCredentials();
+  } else if (!(await AuthManager.hasCredentials(context))) {
     // Delay the message slightly to avoid race conditions with other startup messages
     setTimeout(() => {
       const manageAuthCommandText = "Manage Authentication";
