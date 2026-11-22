@@ -139,20 +139,38 @@ async function setToken(context: vscode.ExtensionContext): Promise<void> {
     return;
   }
 
-  // Both are stored: remove any copies left in the user settings
-  const config = vscode.workspace.getConfiguration("vscode-ha-config");
-  if (urlChanged && config.inspect("hostUrl")?.globalValue !== undefined) {
-    await config.update("hostUrl", undefined, vscode.ConfigurationTarget.Global);
-  }
-  if (config.inspect("longLivedAccessToken")?.globalValue !== undefined) {
-    await config.update("longLivedAccessToken", undefined, vscode.ConfigurationTarget.Global);
-  }
-
   vscode.window.showInformationMessage(
     urlChanged
       ? `Home Assistant instance URL (${instanceUrl}) and token have been securely stored.`
       : "Home Assistant token has been securely stored.",
   );
+
+  // Both are stored: remove any copies left in the user settings
+  await removeUserSettingCopies(urlChanged ? ["hostUrl", "longLivedAccessToken"] : ["longLivedAccessToken"]);
+}
+
+/**
+ * Removes copies of the given settings from the user settings, once the values are in
+ * SecretStorage. Tries every setting even if one fails, and reports any that are left.
+ */
+async function removeUserSettingCopies(keys: string[]): Promise<void> {
+  const config = vscode.workspace.getConfiguration("vscode-ha-config");
+  const failed: string[] = [];
+  for (const key of keys) {
+    if (config.inspect(key)?.globalValue === undefined) {
+      continue;
+    }
+    try {
+      await config.update(key, undefined, vscode.ConfigurationTarget.Global);
+    } catch {
+      failed.push(`vscode-ha-config.${key}`);
+    }
+  }
+  if (failed.length > 0) {
+    vscode.window.showWarningMessage(
+      `The value is stored securely, but the old copy in your user settings couldn't be removed: ${failed.join(", ")}. Remove it from your user settings yourself.`,
+    );
+  }
 }
 
 async function clearToken(context: vscode.ExtensionContext): Promise<void> {
@@ -365,11 +383,6 @@ async function setInstanceUrl(context: vscode.ExtensionContext): Promise<void> {
   if (newUrl && newUrl !== storedUrl) {
     try {
       await AuthManager.storeUrl(context, newUrl);
-      // Remove from settings if it exists
-      const config = vscode.workspace.getConfiguration("vscode-ha-config");
-      if (config.get("hostUrl") !== undefined) {
-        await config.update("hostUrl", undefined, vscode.ConfigurationTarget.Global);
-      }
       vscode.window.showInformationMessage(
         AuthManager.usesWorkspaceCredentials()
           ? `Home Assistant instance URL has been securely stored: ${newUrl}. This workspace sets its own connection in its settings, so it keeps using that.`
@@ -377,7 +390,9 @@ async function setInstanceUrl(context: vscode.ExtensionContext): Promise<void> {
       );
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to store Home Assistant instance URL: ${error.message}`);
+      return;
     }
+    await removeUserSettingCopies(["hostUrl"]);
   } else if (!newUrl) {
     vscode.window.showWarningMessage("No Home Assistant instance URL was entered.");
   } else {
