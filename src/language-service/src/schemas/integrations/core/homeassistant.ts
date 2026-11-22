@@ -4,6 +4,7 @@ import {
   Currency,
   CountryTags,
   DeviceClasses,
+  Include,
   IncludeNamed,
   Integer,
   LanguageTags,
@@ -120,9 +121,10 @@ export interface Schema {
 
   /**
    * Packages in Home Assistant provide a way to bundle different component’s configuration together. It allows for "splitting" your configuration.
+   * Each key is a package name, and its value is that package’s configuration or an !include of it.
    * https://www.home-assistant.io/docs/configuration/packages/
    */
-  packages?: ConfigurationRoot | IncludeNamed;
+  packages?: { [packageName: string]: ConfigurationRoot | Include } | IncludeNamed;
 
   /**
    * Pick your time zone from the column TZ of Wikipedia’s list of tz database time

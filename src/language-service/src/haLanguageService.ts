@@ -165,6 +165,69 @@ export class HomeAssistantLanguageService {
     return validTags;
   }
 
+  /**
+   * Tags whose value yaml-language-server validates without the tag (it strips custom tags),
+   * so a schema error on that value is meaningless: `packages: !include_dir_named packages`
+   * is checked as the string `packages`. Includes and !secret point at other files, !env_var
+   * is only known at runtime and !input is up to the blueprint user.
+   */
+  private readonly unvalidatedValueTags = new Set([
+    ...Object.keys(Includetype)
+      .filter((item) => Number.isNaN(Number(item)))
+      .map((item) => `!${item}`),
+    "!env_var",
+    "!input",
+    "!secret",
+  ]);
+
+  /**
+   * Returns whether the block list item on `lineIndex` belongs directly to one of the given
+   * keys, e.g. `- light.kitchen` below `entity_id:`.
+   *
+   * Walks up by indentation, not to the previous blank line: blank lines and comments don't
+   * end a YAML block, and files the UI editor writes have no blank lines at all. Sibling items
+   * and content nested in earlier items are skipped; the first line indented less than the
+   * item (or a key at the same indent) owns the list.
+   */
+  private isListItemOfProperty(
+    lines: string[],
+    lineIndex: number,
+    propertyNames: string[],
+  ): boolean {
+    const itemIndent = lines[lineIndex].search(/\S/);
+
+    for (let i = lineIndex - 1; i >= 0; i--) {
+      const trimmedLine = lines[i].trim();
+
+      if (trimmedLine === "" || trimmedLine.startsWith("#")) {
+        continue;
+      }
+
+      // A document marker at column zero ends the search, even with a comment or content
+      // after it. Indented text, such as block scalar content, is not a marker.
+      if (/^(?:---|\.\.\.)(?:\s|$)/.test(lines[i])) {
+        return false;
+      }
+
+      const lineIndent = lines[i].search(/\S/);
+      if (
+        lineIndent > itemIndent ||
+        (lineIndent === itemIndent && trimmedLine.startsWith("-"))
+      ) {
+        continue;
+      }
+
+      // `key:`, `- key:` or `"key":`, optionally followed by an anchor or tag
+      // (`key: &targets`) and a comment
+      const keyMatch = trimmedLine.match(
+        /^(?:-\s+)?["']?([\w-]+)["']?\s*:(?:\s+[&!][^\s#]*)*\s*(?:#.*)?$/,
+      );
+      return keyMatch !== null && propertyNames.includes(keyMatch[1]);
+    }
+
+    return false;
+  }
+
   private onDocumentChangeDebounce: NodeJS.Timeout | undefined;
 
   public onDocumentChange = (document: TextDocument): void => {
@@ -213,67 +276,15 @@ export class HomeAssistantLanguageService {
     for (const diagnosticItem of diagnosticResults) {
       const startChar = diagnosticItem.range.start.character;
       const startLine = diagnosticItem.range.start.line;
-      const endLine = diagnosticItem.range.end.line;
-      
-      // Fetch the text before the error, this might be "!secret"
-      // Ensure we don't go negative with character positions
-      const secretStartChar = Math.max(0, startChar - 8);
-      const secretEndChar = Math.max(0, startChar - 1);
-      
-      if (secretStartChar < secretEndChar) {
-        const possibleSecret = document.getText(
-          Range.create(
-            startLine,
-            secretStartChar,
-            endLine,
-            secretEndChar,
-          ),
-        );
 
-        // Skip errors about secrets, we simply have no idea what is in them
-        if (possibleSecret === "!secret") {
-          continue;
-        }
-      }
-
-      // Fetch the text before the error, this might be "!input"
-      const inputStartChar = Math.max(0, startChar - 7);
-      const inputEndChar = Math.max(0, startChar - 1);
-      
-      if (inputStartChar < inputEndChar) {
-        const possibleInput = document.getText(
-          Range.create(
-            startLine,
-            inputStartChar,
-            endLine,
-            inputEndChar,
-          ),
-        );
-
-        // Skip errors about input, that is up to the Blueprint creator
-        if (possibleInput === "!input") {
-          continue;
-        }
-      }
-
-      // Fetch the text before the error, this might be "!include"
-      const includeStartChar = Math.max(0, startChar - 9);
-      const includeEndChar = Math.max(0, startChar - 1);
-      
-      if (includeStartChar < includeEndChar) {
-        const possibleInclude = document.getText(
-          Range.create(
-            startLine,
-            includeStartChar,
-            endLine,
-            includeEndChar,
-          ),
-        );
-
-        // Skip errors about include, everything can be included
-        if (possibleInclude === "!include") {
-          continue;
-        }
+      // Skip errors on a value behind a tag such as !secret or !include_dir_named: the
+      // schema only ever sees the bare value (see unvalidatedValueTags)
+      const textBeforeError = document.getText(
+        Range.create(startLine, 0, startLine, startChar),
+      );
+      const tagBeforeError = textBeforeError.match(/(![\w]+)\s+$/)?.[1];
+      if (tagBeforeError && this.unvalidatedValueTags.has(tagBeforeError)) {
+        continue;
       }
 
       diagnosticItem.severity = 1; // Convert all warnings to errors
@@ -437,25 +448,12 @@ export class HomeAssistantLanguageService {
         
         // Handle multi-line entity arrays
         if (line.trim().startsWith("- ")) {
-          // Check if we're in an entity list context by looking at previous lines
-          let currentLineIndex = lineIndex - 1;
-          let foundEntityProperty = false;
-          
-          while (currentLineIndex >= 0 && lines[currentLineIndex].trim() !== "") {
-            const prevLine = lines[currentLineIndex];
-            
-            for (const propertyName of EntityIdCompletionContribution.propertyMatches) {
-              if (new RegExp(`\\s*${propertyName}\\s*:\\s*$`).test(prevLine)) {
-                foundEntityProperty = true;
-                break;
-              }
-            }
-            
-            if (foundEntityProperty) {
-              break;
-            }
-            currentLineIndex--;
-          }
+          // Only items directly below a matching key belong to a entity list
+          const foundEntityProperty = this.isListItemOfProperty(
+            lines,
+            lineIndex,
+            EntityIdCompletionContribution.propertyMatches,
+          );
           
           if (foundEntityProperty) {
             const entityMatch = line.match(/^\s*-\s*([^#\n]+)/);
@@ -655,25 +653,12 @@ export class HomeAssistantLanguageService {
         
         // Handle multi-line area arrays
         if (line.trim().startsWith("- ")) {
-          // Check if we're in an area list context by looking at previous lines
-          let currentLineIndex = lineIndex - 1;
-          let foundAreaProperty = false;
-          
-          while (currentLineIndex >= 0 && lines[currentLineIndex].trim() !== "") {
-            const prevLine = lines[currentLineIndex];
-            
-            for (const propertyName of AreaCompletionContribution.propertyMatches) {
-              if (new RegExp(`\\s*${propertyName}\\s*:\\s*$`).test(prevLine)) {
-                foundAreaProperty = true;
-                break;
-              }
-            }
-            
-            if (foundAreaProperty) {
-              break;
-            }
-            currentLineIndex--;
-          }
+          // Only items directly below a matching key belong to a area list
+          const foundAreaProperty = this.isListItemOfProperty(
+            lines,
+            lineIndex,
+            AreaCompletionContribution.propertyMatches,
+          );
           
           if (foundAreaProperty) {
             const areaMatch = line.match(/^\s*-\s*([^#\n]+)/);
@@ -883,25 +868,12 @@ export class HomeAssistantLanguageService {
         
         // Handle multi-line device arrays
         if (line.trim().startsWith("- ")) {
-          // Check if we're in a device list context by looking at previous lines
-          let currentLineIndex = lineIndex - 1;
-          let foundDeviceProperty = false;
-          
-          while (currentLineIndex >= 0 && lines[currentLineIndex].trim() !== "") {
-            const prevLine = lines[currentLineIndex];
-            
-            for (const propertyName of DeviceCompletionContribution.propertyMatches) {
-              if (new RegExp(`\\s*${propertyName}\\s*:\\s*$`).test(prevLine)) {
-                foundDeviceProperty = true;
-                break;
-              }
-            }
-            
-            if (foundDeviceProperty) {
-              break;
-            }
-            currentLineIndex--;
-          }
+          // Only items directly below a matching key belong to a device list
+          const foundDeviceProperty = this.isListItemOfProperty(
+            lines,
+            lineIndex,
+            DeviceCompletionContribution.propertyMatches,
+          );
           
           if (foundDeviceProperty) {
             const deviceMatch = line.match(/^\s*-\s*([^#\n]+)/);
@@ -1111,25 +1083,12 @@ export class HomeAssistantLanguageService {
         
         // Handle multi-line floor arrays
         if (line.trim().startsWith("- ")) {
-          // Check if we're in a floor list context by looking at previous lines
-          let currentLineIndex = lineIndex - 1;
-          let foundFloorProperty = false;
-          
-          while (currentLineIndex >= 0 && lines[currentLineIndex].trim() !== "") {
-            const prevLine = lines[currentLineIndex];
-            
-            for (const propertyName of FloorCompletionContribution.propertyMatches) {
-              if (new RegExp(`\\s*${propertyName}\\s*:\\s*$`).test(prevLine)) {
-                foundFloorProperty = true;
-                break;
-              }
-            }
-            
-            if (foundFloorProperty) {
-              break;
-            }
-            currentLineIndex--;
-          }
+          // Only items directly below a matching key belong to a floor list
+          const foundFloorProperty = this.isListItemOfProperty(
+            lines,
+            lineIndex,
+            FloorCompletionContribution.propertyMatches,
+          );
           
           if (foundFloorProperty) {
             const floorMatch = line.match(/^\s*-\s*([^#\n]+)/);
@@ -1472,25 +1431,12 @@ export class HomeAssistantLanguageService {
         
         // Handle multi-line label arrays
         if (line.trim().startsWith("- ")) {
-          // Check if we're in a label list context by looking at previous lines
-          let currentLineIndex = lineIndex - 1;
-          let foundLabelProperty = false;
-          
-          while (currentLineIndex >= 0 && lines[currentLineIndex].trim() !== "") {
-            const prevLine = lines[currentLineIndex];
-            
-            for (const propertyName of LabelCompletionContribution.propertyMatches) {
-              if (new RegExp(`\\s*${propertyName}\\s*:\\s*$`).test(prevLine)) {
-                foundLabelProperty = true;
-                break;
-              }
-            }
-            
-            if (foundLabelProperty) {
-              break;
-            }
-            currentLineIndex--;
-          }
+          // Only items directly below a matching key belong to a label list
+          const foundLabelProperty = this.isListItemOfProperty(
+            lines,
+            lineIndex,
+            LabelCompletionContribution.propertyMatches,
+          );
           
           if (foundLabelProperty) {
             const labelMatch = line.match(/^\s*-\s*([^#\n]+)/);
@@ -1725,25 +1671,12 @@ export class HomeAssistantLanguageService {
             continue;
           }
           
-          // Check if we're in an action list context by looking at previous lines
-          let currentLineIndex = lineIndex - 1;
-          let foundActionProperty = false;
-          
-          while (currentLineIndex >= 0 && lines[currentLineIndex].trim() !== "") {
-            const prevLine = lines[currentLineIndex];
-            
-            for (const propertyName of ServicesCompletionContribution.propertyMatches) {
-              if (new RegExp(`\\s*${propertyName}\\s*:\\s*$`).test(prevLine)) {
-                foundActionProperty = true;
-                break;
-              }
-            }
-            
-            if (foundActionProperty) {
-              break;
-            }
-            currentLineIndex--;
-          }
+          // Only items directly below a matching key belong to a action list
+          const foundActionProperty = this.isListItemOfProperty(
+            lines,
+            lineIndex,
+            ServicesCompletionContribution.propertyMatches,
+          );
           
           if (foundActionProperty) {
             const actionMatch = line.match(/^\s*-\s*([^#\n]+)/);
