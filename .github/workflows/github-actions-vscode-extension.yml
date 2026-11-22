@@ -2,7 +2,9 @@ name: VS Code Extension
 
 # Push runs only for dev; feature branches are tested once, through their pull request,
 # instead of once for the push and again for the PR. Publishing a GitHub release builds,
-# tests and then publishes that version to the VS Code Marketplace and Open VSX.
+# tests and then publishes that version to the VS Code Marketplace and Open VSX. So does a
+# manual run with release_tag set, which the Dependency release workflow uses: a release it
+# publishes with GITHUB_TOKEN doesn't trigger the release event.
 on:
   push:
     branches: [dev]
@@ -13,6 +15,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Publish this released tag (run the workflow from the same tag)"
+        type: string
+        default: ""
 
 # A new push to a PR cancels that PR's run still in progress. Other runs (dev pushes, releases,
 # manual runs) each get their own group, so a queued run is never replaced by a newer one.
@@ -125,9 +132,10 @@ jobs:
             esac
           done
 
-  # Runs when a GitHub release is published (normally the Release Drafter draft), after the
-  # build and tests pass. The version comes from the release tag, so package.json's version
-  # is not bumped by hand. Pre-releases are not published.
+  # Runs when a GitHub release is published (normally the Release Drafter draft), or for a
+  # manual run with release_tag, after the build and tests pass. The version comes from the
+  # release tag, so package.json's version is not bumped by hand. Pre-releases are not
+  # published.
   #
   # Building and publishing are separate jobs: npm ci runs dependencies' install scripts, so
   # it runs here, in a job that can't request an OIDC token. The publish job gets only the
@@ -135,11 +143,13 @@ jobs:
   package:
     name: Package Extension
     needs: result
-    if: github.event_name == 'release' && !github.event.release.prerelease
+    if: >-
+      (github.event_name == 'release' && !github.event.release.prerelease) ||
+      (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      TAG: ${{ github.event.release.tag_name }}
+      TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
       - name: ⤵️ Check out code from GitHub
@@ -155,11 +165,26 @@ jobs:
             src/language-service/package-lock.json
 
       - name: 🏷 Set version from the release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Only vX.Y.Z: "1.2.3" and "v1.2.3" would publish the same version from two releases
           if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Release tag must look like v1.2.3, got '$TAG'"
             exit 1
+          fi
+          # A manual run must build the released tag itself, and only a published release
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$GITHUB_REF" != "refs/tags/$TAG" ]; then
+              echo "::error::Run the workflow from the tag $TAG, not $GITHUB_REF"
+              exit 1
+            fi
+            release=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease \
+              --jq 'if .isDraft or .isPrerelease then "unpublished" else "published" end' || true)
+            if [ "$release" != "published" ]; then
+              echo "::error::$TAG must be a published release that isn't a pre-release"
+              exit 1
+            fi
           fi
           npm version "${TAG#v}" --no-git-tag-version --allow-same-version
 
@@ -197,7 +222,7 @@ jobs:
       # publishing secrets
       id-token: write
     env:
-      TAG: ${{ github.event.release.tag_name }}
+      TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
       - name: ⤵️ Check out code from GitHub

@@ -1,0 +1,56 @@
+name: Dependabot auto-merge
+
+# Turns on auto-merge for Dependabot's npm patch and minor updates. GitHub then merges the PR
+# once every required check passes (Extension result, Language Service result, CodeRabbit)
+# and every review thread is resolved, so a failing build or an open CodeRabbit comment keeps
+# it open. Major updates, and GitHub Actions updates, wait for a manual merge.
+#
+# No approval is needed: the dev branch rules require none.
+on:
+  pull_request:
+    types: [opened, reopened]
+
+# GITHUB_TOKEN only needs to read the repo; the job adds what it needs
+permissions:
+  contents: read
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    # Check the PR author, not the actor, so a person pushing to a Dependabot branch doesn't
+    # get the PR merged automatically
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'jlusky/vscode-ha-config'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Merge the PR
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: 🔍 Read the Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      # For a grouped update, update-type is the largest bump in the group.
+      # GitHub Actions updates change workflow files, which GITHUB_TOKEN can't merge, and they
+      # don't change the extension, so they're left for a manual merge.
+      - name: 🔀 Enable auto-merge for npm patch and minor updates
+        if: >-
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+           steps.metadata.outputs.update-type == 'version-update:semver-minor')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --merge "$PR_URL"
+
+      - name: ✋ Leave other updates for a manual merge
+        if: >-
+          !(steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+            (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+             steps.metadata.outputs.update-type == 'version-update:semver-minor'))
+        env:
+          ECOSYSTEM: ${{ steps.metadata.outputs.package-ecosystem }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+        run: echo "::notice::Not merging automatically ($ECOSYSTEM, $UPDATE_TYPE). Merge it by hand."
