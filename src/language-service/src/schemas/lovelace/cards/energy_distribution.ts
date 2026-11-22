@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Energy distribution Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-distribution-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The energy distribution card shows how the energy flowed, from the grid to your house, from your solar panels to your house and/or back to the grid.
    * https://www.home-assistant.io/lovelace/energy/#energy-distribution

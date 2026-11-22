@@ -7,12 +7,12 @@
  */
 
 import { Entity as EntityString, PositiveInteger } from "../../types";
-import { EntityConfig, ViewLayout } from "../types";
+import { EntityConfig, ViewLayout, CardOptions } from "../types";
 
 type Entity = EntityString | EntityConfig;
 type StatType = "max" | "mean" | "min" | "sum";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Statistics Graph card allows you to display a graph of statistics data for each of the entities listed.
    * https://www.home-assistant.io/lovelace/statistics-graph/

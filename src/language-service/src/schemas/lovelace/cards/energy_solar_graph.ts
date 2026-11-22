@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Solar production graph Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-solar-graph-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The solar production graph card shows the amount of energy your solar panels have produced per source, and if setup and available the forecast of the solar production.
    * https://www.home-assistant.io/lovelace/energy/#solar-production-graph

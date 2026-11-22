@@ -10,12 +10,12 @@ import {
   GeoLocationEntity as GeoLocationEntityString,
   PositiveInteger,
 } from "../../types";
-import { EntityConfig, ViewLayout } from "../types";
+import { EntityConfig, ViewLayout, CardOptions } from "../types";
 
 type Entity = EntityString | EntityConfig;
 type GeoLocationEntity = GeoLocationEntityString | "all";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Map card that allows you to display entities on a map.
    * https://www.home-assistant.io/lovelace/map/

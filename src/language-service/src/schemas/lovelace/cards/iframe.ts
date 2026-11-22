@@ -1,4 +1,4 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Webpage/iframe Card
@@ -7,7 +7,7 @@ import { ViewLayout } from "../types";
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/types.ts
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Webpage card allows you to embed your favorite webpage right into Home Assistant.
    * https://www.home-assistant.io/lovelace/iframe/

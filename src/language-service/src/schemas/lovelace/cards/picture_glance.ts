@@ -7,12 +7,12 @@
  */
 
 import { Action } from "../actions";
-import { EntityConfig, ViewLayout } from "../types";
+import { EntityConfig, ViewLayout, CardOptions } from "../types";
 import { CameraEntity, Entity as EntityString } from "../../types";
 
 type Entity = EntityString | PictureGlanceEntityConfig;
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Picture Glance card shows an image and corresponding entity states as an icon. The entities on the right side allow toggle actions, others show the more information dialog.
    * https://www.home-assistant.io/lovelace/picture-glance/

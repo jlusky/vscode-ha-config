@@ -7,9 +7,9 @@
  */
 import { Entity } from "../../types";
 import { HeaderFooter } from "../headers_footers";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Entity card gives you a quick overview of your entity’s state.
    * https://www.home-assistant.io/lovelace/entity

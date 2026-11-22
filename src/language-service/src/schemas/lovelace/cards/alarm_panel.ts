@@ -6,11 +6,11 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
 import { AlarmControlPanelEntity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 type States = "arm_away" | "arm_custom_bypass" | "arm_home" | "arm_night";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Alarm Panel card allows you to Arm and Disarm your alarm control panel integrations.
    * https://www.home-assistant.io/lovelace/alarm-panel/

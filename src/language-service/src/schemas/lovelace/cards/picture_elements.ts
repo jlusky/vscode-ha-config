@@ -7,9 +7,9 @@
  */
 import { CameraEntity } from "../../types";
 import { Element } from "../elements";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The cards allow you to position icons or text and even services on an image based on coordinates. Imagine floor plan, imagine picture-glance with no restrictions!
    * https://www.home-assistant.io/lovelace/picture-elements/

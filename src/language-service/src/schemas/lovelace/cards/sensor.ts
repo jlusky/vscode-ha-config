@@ -7,9 +7,9 @@
  */
 
 import { PositiveInteger, SensorEntity } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Sensor card gives you a quick overview of your sensors state with an optional graph to visualize change over time.
    * https://www.home-assistant.io/lovelace/sensor/

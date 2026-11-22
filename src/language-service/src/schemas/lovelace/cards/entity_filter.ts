@@ -6,12 +6,12 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
 import { Entity as EntityString } from "../../types";
-import { Card, EntityConfig, ViewLayout } from "../types";
+import { Card, EntityConfig, ViewLayout, CardOptions } from "../types";
 
 type Entity = EntityString | EntityFilterEntityConfig;
 type StateFilter = StateFilterConfig | string;
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Entity Filter card allows you to define a list of entities that you want to track only when in a certain state.
    * https://www.home-assistant.io/lovelace/entity-filter/

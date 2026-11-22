@@ -1,11 +1,11 @@
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
 /**
  * Lovelace Energy usage graph Card
  * Sources:
  *  - https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/cards/energy/hui-energy-usage-graph-card.ts
  */
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The energy usage graph card shows the amount of energy your house has consumed, and from what source this energy came.
    * https://www.home-assistant.io/lovelace/energy/#energy-usage-graph

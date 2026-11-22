@@ -6,9 +6,9 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
 import { Entity, PositiveInteger } from "../../types";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Media Control card is used to display Media Player entities on an interface with easy to use controls.
    * https://www.home-assistant.io/lovelace/media-control/
@@ -26,6 +26,19 @@ export interface Schema {
    * https://www.home-assistant.io/lovelace/markdown/#title
    */
   title?: string;
+
+  /**
+   * Show only the text, without the card background. Home Assistant sets this on the default
+   * header card of a sections view.
+   * https://www.home-assistant.io/dashboards/markdown/#text_only
+   */
+  text_only?: boolean;
+
+  /**
+   * Show the card when the rendered content is empty.
+   * https://www.home-assistant.io/dashboards/markdown/#show_empty
+   */
+  show_empty?: boolean;
 
   /**
    * The algorithm for placing cards aesthetically in Lovelace may have problems with the Markdown card if it contains templates. You can use this value to help it estimate the height of the card in units of 50 pixels (approximately 3 lines of text in default size). (e.g., 4).

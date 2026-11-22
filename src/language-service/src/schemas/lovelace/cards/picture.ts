@@ -7,9 +7,9 @@
  */
 
 import { Action } from "../actions";
-import { ViewLayout } from "../types";
+import { ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Picture card allows you to set an image to use for navigation to various paths in your interface or to call a service.
    * https://www.home-assistant.io/lovelace/picture/

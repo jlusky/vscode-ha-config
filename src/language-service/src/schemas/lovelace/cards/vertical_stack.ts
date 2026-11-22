@@ -6,9 +6,9 @@
  *  - https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts
  */
 
-import { Card, ViewLayout } from "../types";
+import { Card, ViewLayout, CardOptions } from "../types";
 
-export interface Schema {
+export interface Schema extends CardOptions {
   /**
    * The Vertical Stack card allows you to group multiple cards so they always sit in the same column.
    * https://www.home-assistant.io/lovelace/vertical-stack/

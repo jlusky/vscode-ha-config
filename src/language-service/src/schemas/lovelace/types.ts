@@ -27,6 +27,7 @@ export type Card =
   | cards.Gauge.Schema
   | cards.Glance.Schema
   | cards.Grid.Schema
+  | cards.Heading.Schema
   | cards.HistoryGraph.Schema
   | cards.HorizontalStack.Schema
   | cards.Humidifier.Schema
@@ -115,4 +116,48 @@ export interface ViewLayout {
    * https://www.home-assistant.io/lovelace/sidebar/#view_layoutposition
    */
   position?: "main" | "sidebar";
+}
+
+/**
+ * Size of a card in a sections view, in grid cells.
+ * Source: LovelaceGridOptions in https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/types.ts
+ */
+export interface GridOptions {
+  /**
+   * Number of columns the card spans, or "full" for the full width of the section.
+   */
+  columns?: number | "full";
+
+  /**
+   * Number of rows the card spans, or "auto" to fit its content.
+   */
+  rows?: number | "auto";
+
+  max_columns?: number;
+  min_columns?: number;
+  min_rows?: number;
+  max_rows?: number;
+}
+
+/**
+ * Options every card accepts, whatever its type.
+ * Source: LovelaceCardConfig in https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace/config/card.ts
+ */
+export interface CardOptions {
+  /**
+   * The size of the card in a sections view.
+   * https://www.home-assistant.io/dashboards/cards/#resizing-a-card
+   */
+  grid_options?: GridOptions;
+
+  /**
+   * Conditions that must all be true for the card to show.
+   * https://www.home-assistant.io/dashboards/cards/#showing-or-hiding-a-card-conditionally
+   */
+  visibility?: any[];
+
+  /**
+   * Hide the card without removing it.
+   */
+  disabled?: boolean;
 }
