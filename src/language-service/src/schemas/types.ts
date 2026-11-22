@@ -95,6 +95,7 @@ export type DeviceClassesMediaPlayer = "tv" | "speaker" | "receiver";
  * From: https://github.com/home-assistant/core/blob/dev/homeassistant/components/sensor/const.py
  */
 export type DeviceClassesSensor =
+  | "absolute_humidity"
   | "apparent_power"
   | "aqi"
   | "area"
@@ -129,18 +130,23 @@ export type DeviceClassesSensor =
   | "pm1"
   | "pm10"
   | "pm25"
-  | "power_factor"
+  | "pm4"
   | "power"
-  | "precipitation_intensity"
+  | "power_factor"
   | "precipitation"
+  | "precipitation_intensity"
   | "pressure"
+  | "radon"
+  | "reactive_energy"
   | "reactive_power"
   | "signal_strength"
   | "sound_pressure"
   | "speed"
   | "sulphur_dioxide"
   | "temperature"
+  | "temperature_delta"
   | "timestamp"
+  | "uptime"
   | "volatile_organic_compounds"
   | "volatile_organic_compounds_parts"
   | "voltage"
@@ -149,6 +155,7 @@ export type DeviceClassesSensor =
   | "volume_storage"
   | "water"
   | "weight"
+  | "wind_direction"
   | "wind_speed";
 
 /**
