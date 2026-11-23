@@ -13,6 +13,12 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+# A newer push to the PR replaces a run still in progress, so an older run never acts on a
+# PR that has changed since
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 # GITHUB_TOKEN only needs to read the repo; the job adds what it needs
 permissions:
   contents: read
@@ -39,8 +45,12 @@ jobs:
         id: commits
         run: |
           set -euo pipefail
-          others=$(gh api "repos/$REPO/pulls/$PR/commits" --paginate \
-            --jq '.[] | select(.author.login != "dependabot[bot]") | .sha')
+          commits=$(gh api "repos/$REPO/pulls/$PR/commits" --paginate \
+            --jq '.[] | .sha + " " + (.author.login // "")')
+          # The last commit listed is the head this check covers. Auto-merge is enabled only
+          # if the PR head is still this commit.
+          echo "head=$(tail -n 1 <<< "$commits" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          others=$(awk '$2 != "dependabot[bot]" { print $1 }' <<< "$commits")
           if [ -z "$others" ]; then
             echo "dependabot-only=true" >> "$GITHUB_OUTPUT"
             exit 0
@@ -66,7 +76,10 @@ jobs:
           steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
           (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
            steps.metadata.outputs.update-type == 'version-update:semver-minor')
-        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          HEAD_SHA: ${{ steps.commits.outputs.head }}
+        # Fails if anything was pushed after the check; that push starts a new run
+        run: gh pr merge --auto --merge --match-head-commit "$HEAD_SHA" "$PR_URL"
 
       - name: ✋ Leave other updates for a manual merge
         if: >-

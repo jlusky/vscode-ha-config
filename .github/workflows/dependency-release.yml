@@ -142,7 +142,7 @@ jobs:
           # for the same version. It makes a new draft on the next push to dev. Any other draft
           # is left alone.
           draft=$(gh api "repos/$REPO/releases" --paginate \
-            --jq '.[] | select(.draft and (.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) and ((.body // "") | startswith("## What’s Changed"))) | .id' | head -n 1)
+            --jq '.[] | select(.draft and ((.name // "") | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) and ((.body // "") | startswith("## What’s Changed"))) | .id' | head -n 1)
           if [ -n "$draft" ]; then
             gh api -X PATCH "repos/$REPO/releases/$draft" \
               -f tag_name="$TAG" -f target_commitish="$SHA" -f name="$TAG" \
