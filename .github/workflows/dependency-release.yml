@@ -3,7 +3,8 @@ name: Dependency release
 # Every Monday, releases the Dependabot updates merged since the last release as a patch
 # version. It releases only when every change since the last release came from a Dependabot
 # PR: if any other change is unreleased, it does nothing, so features still go out in a
-# release you publish yourself with your own notes.
+# release you publish yourself with your own notes. When that leaves Dependabot updates
+# waiting, an issue labelled dependency-release says so; it closes once nothing is waiting.
 #
 # A release published with GITHUB_TOKEN doesn't trigger the "release" event, so this starts
 # the VS Code Extension workflow itself, which builds, tests and publishes that tag.
@@ -37,11 +38,15 @@ jobs:
       contents: write
       # Read which PR each commit came from
       pull-requests: read
+      # Open and close the issue about waiting dependency updates
+      issues: write
     outputs:
       tag: ${{ steps.publish.outputs.tag }}
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
+      OWNER: ${{ github.repository_owner }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       # A scheduled run has no inputs, so it always releases
       DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
 
@@ -62,45 +67,87 @@ jobs:
           commits=$(gh api "repos/$REPO/compare/$latest...$sha" --paginate --jq '.commits[].sha')
           if [ -z "$commits" ]; then
             echo "Nothing has changed since $latest."
-            echo "release=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "release=false"
+              echo "waiting=false"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Every commit must belong to a merged Dependabot PR. A commit with no PR, or from
-          # anyone else's PR, means the release is left for you.
-          prs=""
+          # Sort the unreleased commits into Dependabot PRs and everything else. A commit with
+          # no PR, or from anyone else's PR, leaves the release to you.
+          dependabot=""
+          : > others.md
           for commit in $commits; do
             pr=$(gh api "repos/$REPO/commits/$commit/pulls" \
               --jq '[.[] | select(.merged_at != null and .base.ref == "dev")] | first // empty | "\(.number) \(.user.login)"')
             if [ -z "$pr" ]; then
-              echo "::notice::$commit isn't from a merged PR, so there's no dependency release this time. Publish the next release yourself."
-              echo "release=false" >> "$GITHUB_OUTPUT"
-              exit 0
+              echo "- Commit ${commit:0:8}, which isn't from a merged PR" >> others.md
+              continue
             fi
             read -r number author <<< "$pr"
-            if [ "$author" != "dependabot[bot]" ]; then
-              echo "::notice::#$number by $author isn't released yet, so there's no dependency release this time. Publish the next release yourself."
-              echo "release=false" >> "$GITHUB_OUTPUT"
+            if [ "$author" = "dependabot[bot]" ]; then
+              dependabot="$dependabot $number"
+            else
+              # No @, so the issue doesn't notify every PR author
+              echo "- #$number by $author" >> others.md
+            fi
+          done
+          dependabot=$(printf '%s\n' $dependabot | sort -nu)
+          # A PR with several commits is listed once, in merge order
+          awk '!seen[$0]++' others.md > others-unique.md
+
+          # $1 goes before each author: "@" in the release notes, "by " in the issue, which
+          # mentions no one
+          list_updates() {
+            for number in $dependabot; do
+              gh api "repos/$REPO/pulls/$number" \
+                --jq '[.title, (.user.login | rtrimstr("[bot]")), (.number | tostring)] | join("\t")' |
+                while IFS=$'\t' read -r title author pr_number; do
+                  echo "- $title $1$author (#$pr_number)"
+                done
+            done
+          }
+
+          if [ -s others-unique.md ]; then
+            echo "::notice::Changes other than Dependabot updates aren't released yet, so there's no dependency release this time. Publish the next release yourself."
+            cat others-unique.md
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            if [ -z "$dependabot" ]; then
+              echo "waiting=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            prs="$prs $number"
-          done
-          prs=$(printf '%s\n' $prs | sort -nu)
+            # Dependabot updates are merged but can't ship until you publish a release
+            {
+              echo "The weekly dependency release skipped, because changes other than Dependabot updates aren't released yet. Publish the next release yourself to ship these dependency updates too."
+              echo
+              echo "## Dependency updates waiting"
+              echo
+              list_updates "by "
+              echo
+              echo "## Other unreleased changes"
+              echo
+              cat others-unique.md
+              echo
+              echo "Last checked by [this run]($RUN_URL). This issue closes when the next dependency release runs and nothing is waiting."
+            } > issue.md
+            echo "waiting=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           {
             echo "## What’s Changed"
             echo
             echo "## ⬆️ Dependencies"
             echo
-            for number in $prs; do
-              gh api "repos/$REPO/pulls/$number" --jq '"- \(.title) @\(.user.login | rtrimstr("[bot]")) (#\(.number))"'
-            done
+            list_updates "@"
           } > notes.md
 
           echo "Releasing $next from $sha with:"
           cat notes.md
           {
             echo "release=true"
+            echo "waiting=false"
             echo "tag=$next"
             echo "sha=$sha"
           } >> "$GITHUB_OUTPUT"
@@ -153,6 +200,50 @@ jobs:
           fi
           echo "Published $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      # One open issue, labelled dependency-release, tells you dependency updates are waiting.
+      # It's created (and assigned to you) the first week they wait, and updated quietly after.
+      - name: 📣 Report the waiting dependency updates
+        if: steps.changes.outputs.waiting == 'true' && env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          gh label create dependency-release --repo "$REPO" --color 0366d6 --force \
+            --description "Dependency updates waiting for a release" > /dev/null
+          issue=$(gh issue list --repo "$REPO" --label dependency-release --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$issue" ]; then
+            gh issue edit "$issue" --repo "$REPO" --body-file issue.md > /dev/null
+            echo "Updated #$issue"
+          else
+            gh issue create --repo "$REPO" --title "Dependency updates are waiting for a release" \
+              --label dependency-release --assignee "$OWNER" --body-file issue.md
+          fi
+
+      # Runs after a successful dependency release, or when nothing is waiting any more
+      # (for example, after you published a release yourself)
+      - name: ✅ Close the waiting dependency updates issue
+        if: steps.changes.outputs.waiting == 'false' && env.DRY_RUN != 'true'
+        env:
+          TAG: ${{ steps.publish.outputs.tag }}
+        # After a release, the publish job needs this job to succeed, so a problem with the
+        # issue is only a warning and never stops the extension from being published
+        run: |
+          set -uo pipefail
+          if ! issues=$(gh issue list --repo "$REPO" --label dependency-release --state open \
+            --json number --jq '.[].number'); then
+            echo "::warning::Couldn't look for the waiting dependency updates issue. Close it yourself if it's open."
+            exit 0
+          fi
+          if [ -n "$TAG" ]; then
+            comment="Released in $TAG."
+          else
+            comment="No dependency updates are waiting for a release any more."
+          fi
+          for issue in $issues; do
+            if ! gh issue close "$issue" --repo "$REPO" --comment "$comment"; then
+              echo "::warning::Couldn't close #$issue. Close it yourself."
+            fi
+          done
 
   # A separate job, so if starting the build fails after the release is published, "Re-run
   # failed jobs" retries it with the same tag. A new run wouldn't: it finds nothing unreleased.
