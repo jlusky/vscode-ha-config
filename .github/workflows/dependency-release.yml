@@ -97,9 +97,15 @@ jobs:
           # A PR with several commits is listed once, in merge order
           awk '!seen[$0]++' others.md > others-unique.md
 
+          # $1 goes before each author: "@" in the release notes, "by " in the issue, which
+          # mentions no one
           list_updates() {
             for number in $dependabot; do
-              gh api "repos/$REPO/pulls/$number" --jq '"- \(.title) @\(.user.login | rtrimstr("[bot]")) (#\(.number))"'
+              gh api "repos/$REPO/pulls/$number" \
+                --jq '[.title, (.user.login | rtrimstr("[bot]")), (.number | tostring)] | join("\t")' |
+                while IFS=$'\t' read -r title author pr_number; do
+                  echo "- $title $1$author (#$pr_number)"
+                done
             done
           }
 
@@ -113,11 +119,11 @@ jobs:
             fi
             # Dependabot updates are merged but can't ship until you publish a release
             {
-              echo "@$OWNER The weekly dependency release skipped, because changes other than Dependabot updates aren't released yet. Publish the next release yourself to ship these dependency updates too."
+              echo "The weekly dependency release skipped, because changes other than Dependabot updates aren't released yet. Publish the next release yourself to ship these dependency updates too."
               echo
               echo "## Dependency updates waiting"
               echo
-              list_updates
+              list_updates "by "
               echo
               echo "## Other unreleased changes"
               echo
@@ -134,7 +140,7 @@ jobs:
             echo
             echo "## ⬆️ Dependencies"
             echo
-            list_updates
+            list_updates "@"
           } > notes.md
 
           echo "Releasing $next from $sha with:"
@@ -219,17 +225,24 @@ jobs:
         if: steps.changes.outputs.waiting == 'false' && env.DRY_RUN != 'true'
         env:
           TAG: ${{ steps.publish.outputs.tag }}
+        # After a release, the publish job needs this job to succeed, so a problem with the
+        # issue is only a warning and never stops the extension from being published
         run: |
-          set -euo pipefail
-          issues=$(gh issue list --repo "$REPO" --label dependency-release --state open \
-            --json number --jq '.[].number')
+          set -uo pipefail
+          if ! issues=$(gh issue list --repo "$REPO" --label dependency-release --state open \
+            --json number --jq '.[].number'); then
+            echo "::warning::Couldn't look for the waiting dependency updates issue. Close it yourself if it's open."
+            exit 0
+          fi
           if [ -n "$TAG" ]; then
             comment="Released in $TAG."
           else
             comment="No dependency updates are waiting for a release any more."
           fi
           for issue in $issues; do
-            gh issue close "$issue" --repo "$REPO" --comment "$comment"
+            if ! gh issue close "$issue" --repo "$REPO" --comment "$comment"; then
+              echo "::warning::Couldn't close #$issue. Close it yourself."
+            fi
           done
 
   # A separate job, so if starting the build fails after the release is published, "Re-run
