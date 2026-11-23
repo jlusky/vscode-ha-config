@@ -751,7 +751,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "@stylistic/eslint-plugin": "^6.0.1",
     "@types/mocha": "^10.0.10",
-    "@types/node": "24.19.2",
+    "@types/node": "22.20.5",
     "@types/request": "2.48.13",
     "@types/vscode": "~1.101.0",
     "@types/ws": "8.18.2",

@@ -1,0 +1,119 @@
+name: TypeScript update check
+
+# Dependabot can't update the two TypeScript packages, because both are npm aliases:
+# - "typescript" is @typescript/typescript6, the TS 6 API that typescript-eslint and ts-node load
+# - "@typescript/native" is typescript 7, which provides tsc
+# Every Monday this compares the versions in both lockfiles with the latest on npm. When
+# either is out of date, it opens (or updates) one issue labelled typescript-update, assigned
+# to the repository owner. The issue closes once both are up to date.
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report, without opening or closing the issue"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+# GITHUB_TOKEN only needs to read the repo; the job adds what it needs
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check for TypeScript updates
+    if: github.repository == 'jlusky/vscode-ha-config'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Read the lockfiles
+      contents: read
+      # Open and close the issue
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      OWNER: ${{ github.repository_owner }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # A scheduled run has no inputs, so it always updates the issue
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+
+    steps:
+      - name: ⤵️ Check out code from GitHub
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: 🔍 Compare the installed versions with npm
+        id: compare
+        run: |
+          set -euo pipefail
+          # Alias name in package.json, real package on npm
+          aliases=(
+            "typescript @typescript/typescript6"
+            "@typescript/native typescript"
+          )
+          : > updates.md
+          for entry in "${aliases[@]}"; do
+            read -r alias package <<< "$entry"
+            latest=$(npm view "$package" version)
+            for dir in . src/language-service; do
+              installed=$(node -p "require('./$dir/package-lock.json').packages['node_modules/$alias'].version")
+              newest=$(printf '%s\n%s\n' "$installed" "$latest" | sort -V | tail -n 1)
+              if [ "$installed" != "$latest" ] && [ "$newest" = "$latest" ]; then
+                echo "$dir: $alias ($package) $installed → $latest"
+                if [ "${installed%%.*}" != "${latest%%.*}" ]; then
+                  major=" **(new major version: check compatibility first)**"
+                else
+                  major=""
+                fi
+                echo "- \`$alias\` in \`$dir\` (npm package \`$package\`): $installed → $latest$major" >> updates.md
+                echo "  - Run \`npm install -D \"$alias@npm:$package@^$latest\"\` in \`$dir\`" >> updates.md
+              else
+                echo "$dir: $alias ($package) $installed is up to date"
+              fi
+            done
+          done
+
+          if [ ! -s updates.md ]; then
+            echo "outdated=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          {
+            echo "@$OWNER Newer TypeScript versions are out. Dependabot can't update these packages, because they're installed under alias names, so update them by hand:"
+            echo
+            cat updates.md
+            echo
+            echo "Then run the build and tests. Last checked by [this run]($RUN_URL). This issue closes when the weekly check finds both packages up to date."
+          } > issue.md
+          echo "::notice::TypeScript updates are available"
+          echo "outdated=true" >> "$GITHUB_OUTPUT"
+
+      - name: 📣 Report the TypeScript updates
+        if: steps.compare.outputs.outdated == 'true' && env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          gh label create typescript-update --repo "$REPO" --color 3178c6 --force \
+            --description "TypeScript updates Dependabot can't make" > /dev/null
+          issue=$(gh issue list --repo "$REPO" --label typescript-update --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$issue" ]; then
+            gh issue edit "$issue" --repo "$REPO" --body-file issue.md > /dev/null
+            echo "Updated #$issue"
+          else
+            gh issue create --repo "$REPO" --title "TypeScript updates are available" \
+              --label typescript-update --assignee "$OWNER" --body-file issue.md
+          fi
+
+      - name: ✅ Close the TypeScript update issue
+        if: steps.compare.outputs.outdated == 'false' && env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          issues=$(gh issue list --repo "$REPO" --label typescript-update --state open \
+            --json number --jq '.[].number')
+          for issue in $issues; do
+            gh issue close "$issue" --repo "$REPO" --comment "Both TypeScript packages are up to date."
+          done

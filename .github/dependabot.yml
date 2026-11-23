@@ -17,12 +17,19 @@ updates:
     ignore:
       # "typescript" is an alias for @typescript/typescript6, the TS 6 API that
       # typescript-eslint and ts-node load; TS 7 has no JS API. tsc itself is TS 7,
-      # installed as "@typescript/native". Never let Dependabot replace the alias with typescript 7.
+      # installed as "@typescript/native" (an alias for typescript 7). Dependabot looks both up
+      # under the alias name, so it can't update them correctly: it would offer the real
+      # "typescript" package's versions for the first, and finds no "@typescript/native" on npm.
+      # Both are updated by hand; the weekly TypeScript update check opens an issue when a
+      # newer version is out.
       - dependency-name: typescript
-        versions: [">=6.1.0"]
-      # Stay on Node 24.x type definitions; ignore @types/node 25+
+      - dependency-name: "@typescript/native"
+      # The extension and language server run on the Node.js bundled with VS Code, which is
+      # Node 22 for the minimum VS Code version (engines.vscode ^1.101.0), and the language
+      # service declares engines.node >=22.13. Newer type definitions would allow Node APIs
+      # that don't exist there. Raise this with the minimum VS Code version.
       - dependency-name: "@types/node"
-        versions: [">=25.0.0"]
+        versions: [">=23.0.0"]
       # Must match engines.vscode (^1.101.0); vsce refuses to package newer API types.
       # Raise both together when the minimum VS Code version goes up.
       - dependency-name: "@types/vscode"
@@ -35,12 +42,12 @@ updates:
     open-pull-requests-limit: 10
     target-branch: dev
     ignore:
-      # Same TS 6 API alias as the root (see above)
+      # Same TypeScript aliases as the root (see above)
       - dependency-name: typescript
-        versions: [">=6.1.0"]
-      # Keep in sync with the root @types/node version (Node 24.x)
+      - dependency-name: "@typescript/native"
+      # Same Node 22 type definitions as the root (see above)
       - dependency-name: "@types/node"
-        versions: [">=25.0.0"]
+        versions: [">=23.0.0"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
