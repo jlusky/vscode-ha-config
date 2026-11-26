@@ -766,7 +766,7 @@
     "eslint-config-prettier": "^10.1.8",
     "glob": "^14.0.6",
     "husky": "^9.1.7",
-    "lint-staged": "^17.6.1",
+    "lint-staged": "^17.6.2",
     "mocha": "^12.0.3",
     "ovsx": "^1.4.0",
     "prettier": "^3.10.1",
