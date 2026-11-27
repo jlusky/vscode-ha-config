@@ -1,54 +1,63 @@
 name-template: "v$RESOLVED_VERSION"
 tag-template: "v$RESOLVED_VERSION"
 categories:
+  # Left out of the draft and of the version. Dependabot PRs are released by the Dependency
+  # release workflow, which writes its own notes.
+  - type: "pre-exclude"
+    when:
+      labels:
+        - "invalid"
+        - "wontfix"
+        - "dependencies"
+
+  # Sections of the release notes
   - title: "🚨 Breaking Changes"
-    labels:
-      - "breaking-change"
+    when:
+      labels:
+        - "breaking-change"
   - title: "🚀 Features"
-    labels:
-      - "feature"
-      - "enhancement"
+    when:
+      labels:
+        - "feature"
+        - "enhancement"
   - title: "🐛 Bug Fixes"
-    labels:
-      - "fix"
-      - "bugfix"
-      - "bug"
+    when:
+      labels:
+        - "fix"
+        - "bugfix"
+        - "bug"
   - title: "🧬 YAML Schema Updates"
-    labels:
-      - "schema"
-      - "yaml"
+    when:
+      labels:
+        - "schema"
+        - "yaml"
   - title: "📚 Documentation"
-    labels:
-      - "documentation"
+    when:
+      labels:
+        - "documentation"
   - title: "🧰 Maintenance"
-    labels:
-      - "chore"
-exclude-labels:
-  - "invalid"
-  - "wontfix"
-  - "dependencies"
+    when:
+      labels:
+        - "chore"
+
+  # The next version: the highest increment any change matches wins, and a release with no
+  # major or minor change is a patch release
+  - type: "version-resolver"
+    semver-increment: "major"
+    when:
+      labels:
+        - "major"
+        - "breaking-change"
+  - type: "version-resolver"
+    semver-increment: "minor"
+    when:
+      labels:
+        - "minor"
+        - "feature"
+        - "enhancement"
+  - type: "version-resolver"
+    semver-increment: "patch"
 change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
-version-resolver:
-  major:
-    labels:
-      - "major"
-      - "breaking-change"
-  minor:
-    labels:
-      - "minor"
-      - "feature"
-      - "enhancement"
-  patch:
-    labels:
-      - "patch"
-      - "bug"
-      - "bugfix"
-      - "chore"
-      - "dependencies"
-      - "documentation"
-      - "fix"
-      - "schema"
-  default: patch
 template: |
   ## What’s Changed
 
