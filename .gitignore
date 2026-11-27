@@ -6,3 +6,6 @@ src/language-service/dist
 src/language-service/src/schemas/json/*.json
 /dist
 /icons
+
+# Written from the GitHub releases when packaging (scripts/changelog.mjs)
+CHANGELOG.md

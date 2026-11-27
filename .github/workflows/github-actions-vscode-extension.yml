@@ -197,6 +197,17 @@ jobs:
       - name: 🚀 Run Compile
         run: npm run compile
 
+      # The Marketplace and Open VSX show CHANGELOG.md from the .vsix. It's written from the
+      # GitHub releases up to this tag, so the release notes stay the only place to write them.
+      - name: 📝 Write CHANGELOG.md from the releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases" > "$RUNNER_TEMP/releases.json"
+          node scripts/changelog.mjs "$RUNNER_TEMP/releases.json" "$TAG" > CHANGELOG.md
+          head -n 20 CHANGELOG.md
+
       # vscode:prepublish bundles dist/ with esbuild; node_modules isn't shipped
       - name: 📦 Package
         run: npx vsce package --no-dependencies -o vscode-ha-config.vsix
