@@ -65,6 +65,15 @@ function endsCleanly(text) {
   return tokens.at(-2)?.type === "inline" && tokens.at(-2).content === END;
 }
 
+// True when the HTML the notes render to leaves a comment open. Markdown can end an HTML
+// block at a blank line while a browser still reads everything after its "<!--" as
+// comment, up to the first "-->". Code and text are escaped, so only raw HTML counts.
+function opensComment(text) {
+  const html = md.render(text);
+  const start = html.lastIndexOf("<!--");
+  return start !== -1 && !html.includes("-->", start + 4);
+}
+
 // The line that ends the code block or HTML block the notes leave open
 function closer(token) {
   if (token.type === "fence") {
@@ -130,6 +139,10 @@ function notes(release) {
         `::warning::The notes for ${release.tag_name} leave something open that may hide the releases after them in the changelog.`,
       );
     }
+  }
+  // A comment of its own, after a blank line, is raw HTML whose "-->" ends the open one
+  if (opensComment(text)) {
+    text = `${text}\n\n<!-- -->`;
   }
   return text;
 }
