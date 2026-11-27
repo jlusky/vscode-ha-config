@@ -53,27 +53,48 @@ if (!releases.some((release) => release.tag_name === tag)) {
 
 function notes(body) {
   const lines = (body ?? "").replace(/\r\n/g, "\n").split("\n");
-  let inCode = false;
+  // The open code fence, like "```" or "~~~~"; lines inside a code block stay as they are
+  let fence = "";
   const out = [];
   for (const line of lines) {
-    if (/^\s*(```|~~~)/.test(line)) {
-      inCode = !inCode;
-    }
-    // Only the heading the notes open with; a later one heads a list of its own
-    const first = out.every((previous) => previous.trim() === "");
-    if (first && /^#{1,6}\s+What['’]s Changed\s*$/i.test(line)) {
+    if (fence) {
+      // A fence closes with the same character, at least as many times, and nothing after it
+      const close = /^ {0,3}(`{3,}|~{3,})\s*$/.exec(line);
+      if (
+        close &&
+        close[1][0] === fence[0] &&
+        close[1].length >= fence.length
+      ) {
+        fence = "";
+      }
+      out.push(line);
       continue;
     }
-    const heading = inCode ? undefined : /^(#{1,6})(\s.*)$/.exec(line);
+    const open = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    if (open) {
+      fence = open[1];
+      out.push(line);
+      continue;
+    }
+    // Only the heading the notes open with, and the blank lines around it; a later one
+    // heads a list of its own
+    const first = out.every((previous) => previous.trim() === "");
+    if (
+      first &&
+      (line.trim() === "" || /^#{1,6}\s+What['’]s Changed\s*$/i.test(line))
+    ) {
+      continue;
+    }
+    const heading = /^(#{1,6})(\s.*)$/.exec(line);
     // Level 1 and 2 headings become level 3, under the version; deeper ones move down one
     const level = heading ? Math.min(6, Math.max(3, heading[1].length + 1)) : 0;
     out.push(heading ? `${"#".repeat(level)}${heading[2]}` : line);
   }
-  // Collapse the blank lines a dropped heading leaves behind
-  return out
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  // Close a code block the notes leave open, so the next release isn't swallowed by it
+  if (fence) {
+    out.push(fence);
+  }
+  return out.join("\n").trimEnd();
 }
 
 const sections = releases.map((release) => {
