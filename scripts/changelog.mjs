@@ -8,6 +8,7 @@
 // It lists every published release (not drafts or pre-releases) up to and including the
 // given tag, newest first. Each release's headings move down to sit under its version, and
 // the "What's Changed" heading each release opens with is dropped.
+import MarkdownIt from "markdown-it";
 import { readFile } from "node:fs/promises";
 
 const [file, tag] = process.argv.slice(2);
@@ -51,57 +52,92 @@ if (!releases.some((release) => release.tag_name === tag)) {
   process.exit(1);
 }
 
-function notes(body) {
-  const lines = (body ?? "").replace(/\r\n/g, "\n").split("\n");
-  // The open code fence, like "```" or "~~~~"; lines inside a code block stay as they are
-  let fence = "";
-  const out = [];
-  for (const line of lines) {
-    if (fence) {
-      // A fence closes with the same character, at least as many times, and nothing after it
-      const close = /^ {0,3}(`{3,}|~{3,})\s*$/.exec(line);
-      if (
-        close &&
-        close[1][0] === fence[0] &&
-        close[1].length >= fence.length
-      ) {
-        fence = "";
-      }
-      out.push(line);
-      continue;
-    }
-    // A backtick fence can't have a backtick after it: ```npm install``` is inline code
-    const open = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
-    if (open && !(open[1][0] === "`" && open[2].includes("`"))) {
-      fence = open[1];
-      out.push(line);
-      continue;
-    }
-    // Only the heading the notes open with, and the blank lines around it; a later one
-    // heads a list of its own
-    const first = out.every((previous) => previous.trim() === "");
-    if (
-      first &&
-      (line.trim() === "" || /^#{1,6}\s+What['’]s Changed\s*$/i.test(line))
-    ) {
-      continue;
-    }
-    const heading = /^(#{1,6})(\s.*)$/.exec(line);
-    // Level 1 and 2 headings become level 3, under the version; deeper ones move down one
-    const level = heading ? Math.min(6, Math.max(3, heading[1].length + 1)) : 0;
-    out.push(heading ? `${"#".repeat(level)}${heading[2]}` : line);
+// The notes are parsed as Markdown, so headings are found the way GitHub and the
+// Marketplace find them: never inside code blocks, HTML comments or other HTML blocks.
+const md = new MarkdownIt("default", { html: true });
+const END = "changelog-end-of-release";
+
+// True when Markdown would read a heading placed after these notes as a heading. An
+// unclosed code block or HTML block runs to the end of the document, so it would take in
+// every release after it.
+function endsCleanly(text) {
+  const tokens = md.parse(`${text}\n\n# ${END}`, {});
+  return tokens.at(-2)?.type === "inline" && tokens.at(-2).content === END;
+}
+
+// The line that ends the code block or HTML block the notes leave open
+function closer(token) {
+  if (token.type === "fence") {
+    return token.markup;
   }
-  // Close a code block the notes leave open, so the next release isn't swallowed by it
-  if (fence) {
-    out.push(fence);
+  if (token.type === "html_block") {
+    const html = token.content.trimStart();
+    const tag = /^<(script|pre|style|textarea)\b/i.exec(html);
+    if (tag) {
+      return `</${tag[1]}>`;
+    }
+    if (html.startsWith("<!--")) {
+      return "-->";
+    }
+    if (html.startsWith("<?")) {
+      return "?>";
+    }
+    if (html.startsWith("<![CDATA[")) {
+      return "]]>";
+    }
+    if (html.startsWith("<!")) {
+      return ">";
+    }
   }
-  return out.join("\n").trimEnd();
+  return undefined;
+}
+
+function notes(release) {
+  const lines = (release.body ?? "").replace(/\r\n/g, "\n").split("\n");
+  const tokens = md.parse(lines.join("\n"), {});
+  tokens.forEach((token, i) => {
+    // Only top-level headings; ones in lists and quotes are left as they are
+    if (token.type !== "heading_open" || token.level !== 0 || !token.map) {
+      return;
+    }
+    const [start, end] = token.map;
+    const text = tokens[i + 1].content.replace(/\n/g, " ");
+    // The "What's Changed" heading the notes open with is dropped; a later one heads a list
+    // of its own
+    if (i === 0 && /^What['’]s Changed$/i.test(text.trim())) {
+      lines.fill(null, start, end);
+      return;
+    }
+    // Level 1 and 2 headings become level 3, under the version; deeper ones move down one.
+    // An underlined heading becomes a # heading, so its underline goes.
+    const level = Math.min(6, Math.max(3, Number(token.tag.slice(1)) + 1));
+    lines[start] = `${"#".repeat(level)} ${text}`;
+    lines.fill(null, start + 1, end);
+  });
+  let text = lines
+    .filter((line) => line !== null)
+    .join("\n")
+    .replace(/^\s*\n/, "")
+    .trimEnd();
+
+  if (!endsCleanly(text)) {
+    const open = tokens.findLast((token) => token.level === 0 && token.map);
+    const line = open && closer(open);
+    if (line && endsCleanly(`${text}\n${line}`)) {
+      text = `${text}\n${line}`;
+    } else {
+      console.error(
+        `::warning::The notes for ${release.tag_name} leave something open that may hide the releases after them in the changelog.`,
+      );
+    }
+  }
+  return text;
 }
 
 const sections = releases.map((release) => {
   const date = (release.published_at ?? release.created_at ?? "").slice(0, 10);
   const heading = `## [${release.tag_name}](${release.html_url})${date ? ` (${date})` : ""}`;
-  const body = notes(release.body);
+  const body = notes(release);
   return body ? `${heading}\n\n${body}\n` : `${heading}\n`;
 });
 
