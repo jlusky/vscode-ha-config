@@ -70,8 +70,9 @@ function notes(body) {
       out.push(line);
       continue;
     }
-    const open = /^ {0,3}(`{3,}|~{3,})/.exec(line);
-    if (open) {
+    // A backtick fence can't have a backtick after it: ```npm install``` is inline code
+    const open = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    if (open && !(open[1][0] === "`" && open[2].includes("`"))) {
       fence = open[1];
       out.push(line);
       continue;
